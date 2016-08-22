@@ -1,0 +1,6 @@
+falcon==1.0.0
+gunicorn==19.6.0
+python-mimeparse==1.5.2
+requests==2.11.0
+six==1.10.0
+statsd==3.2.1

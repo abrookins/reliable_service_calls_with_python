@@ -1,0 +1,45 @@
+authentication:
+  restart: always
+  build: .
+  ports:
+    - "8000:8000"
+  command: /usr/local/bin/gunicorn auth:api -w 2 -b :8000
+
+recommendations:
+  restart: always
+  build: .
+  ports:
+    - "8001:8001"
+  command: /usr/local/bin/gunicorn recommendations:api -w 2 -b :8001
+  links:
+    - authentication
+    - graphite
+
+web:
+  restart: always
+  build: .
+  ports:
+    - "8002:8002"
+  command: /usr/local/bin/gunicorn web:api -w 2 -b :8002
+
+nginx:
+  restart: always
+  build: ./nginx/
+  ports:
+    - "80:80"
+  links:
+    - web:web
+  volumes:
+    - ./nginx/conf.d:/etc/nginx/conf.d
+
+graphite:
+  restart: always
+  build: ./graphite/
+  ports:
+    - "81:80"
+    - "2003:2003"
+    - "2004:2004"
+    - "2023:2023"
+    - "2024:2024"
+    - "8127:8126"
+    - "8125:8125/udp"
