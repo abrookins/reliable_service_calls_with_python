@@ -1,56 +1,70 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import falcon
-import requests
+import pybreaker
+import random
 import statsd
+import time
+
+from apiclient import ApiClient
+
+
+auth_client = ApiClient('authentication')
+auth_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
 
 c = statsd.StatsClient('graphite', 2003)
 
 
-class PermissionsMiddleware(object):
+class FuzzingMiddleware:
+    def process_request(self, req, resp):
+        # Sometimes, the call takes 10 seconds. Oh, no!
+        if random.randint(1, 3) == 1:
+            time.sleep(5)
 
-    def __init__(self, permissions):
-        self._required_permissions = permissions
+
+class PermissionsMiddleware:
+    def __init__(self, permission):
+        self._required_permission = permission
 
     def process_request(self, req, resp):
         token = req.get_header('Authorization')
-        challenges = ['Token type="chocolate"']
+        auth_headers = {'Authorization': token} if token else None
 
-        if token is None:
-            c.incr('recommendations.missing_auth_token')
-            description = 'Please provide an auth token as part of the request.'
+        try:
+            auth_response = auth_breaker.call(auth_client.post, headers=auth_headers)
+        except ConnectionError:
+            c.incr('authorization.circuitbreaker.connection_error')
+            return False
+        except pybreaker.CircuitBreakerError:
+            c.incr('authorization.circuitbreaker.error')
+            return False
 
+        if auth_headers:
+            req.context['auth_header'] = auth_headers
+
+        if auth_response.status_code == 401:
             raise falcon.HTTPUnauthorized('Auth token required',
-                                          description,
-                                          challenges,
+                                          '',
+                                          '',
                                           href='http://docs.example.com/auth')
 
-        user_details = requests.post('http://authentication:8000/authenticate')
-
-        if user_details.status_code == 400:
-            c.incr('recommendations.permission_denied')
-            description = 'The token was invalid.'
-
-            raise falcon.HTTPUnauthorized('Invalid token',
-                                          description,
-                                          challenges,
-                                          href='http://docs.example.com/auth')
+        user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            c.incr('recommendations.permission_denied')
+            c.incr('authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        c.incr('recommendations.authorization_success')
-        req.context['user_details'] = user_details.json()
+        c.incr('authorization.authorization_success')
+        req.context['user_details'] = user_details
 
     def _has_permission(self, user_details):
-        permissions = user_details.json().get('permissions', [])
+        permissions = user_details.get('permissions', [])
 
-        if self._required_permissions in permissions:
+        if self._required_permission in permissions:
             return True
 
         return False

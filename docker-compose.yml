@@ -4,23 +4,39 @@ authentication:
   ports:
     - "8000:8000"
   command: /usr/local/bin/gunicorn auth:api -w 2 -b :8000
+  links:
+    - graphite
+
+home:
+  restart: always
+  build: .
+  ports:
+    - "8001:8001"
+  command: /usr/local/bin/gunicorn homepage:api -w 2 -b :8001
+  links:
+    - authentication
+    - recommendations
+    - graphite
 
 recommendations:
   restart: always
   build: .
   ports:
-    - "8001:8001"
-  command: /usr/local/bin/gunicorn recommendations:api -w 2 -b :8001
+    - "8002:8002"
+  command: /usr/local/bin/gunicorn recommendations:api -w 2 -b :8002
   links:
     - authentication
     - graphite
 
-web:
+popular:
   restart: always
   build: .
   ports:
-    - "8002:8002"
-  command: /usr/local/bin/gunicorn web:api -w 2 -b :8002
+    - "8003:8003"
+  command: /usr/local/bin/gunicorn popular:api -w 2 -b :8003
+  links:
+    - authentication
+    - graphite
 
 nginx:
   restart: always
@@ -28,7 +44,7 @@ nginx:
   ports:
     - "80:80"
   links:
-    - web:web
+    - home
   volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d
 

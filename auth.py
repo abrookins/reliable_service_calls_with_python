@@ -2,25 +2,39 @@
 # encoding: utf-8
 import falcon
 import json
-import random
-import time
 import uuid
+import statsd
+
+from middleware import FuzzingMiddleware
+
+
+c = statsd.StatsClient('graphite', 2003)
 
 
 class AuthenticationResource:
     def on_post(self, req, resp):
         """Return authentication details if a valid token was provided."""
-        # Sometimes, this call takes 20 seconds. Oh, no!
-        if random.randint(1, 3) == 1:
-            time.sleep(10)
+        token = req.get_header('Authorization')
+        challenges = ['Token type="pudding"']
+
+        if token is None:
+            c.incr('authentication.missing_auth_token')
+            description = 'Please provide an auth token as part of the request.'
+
+            raise falcon.HTTPUnauthorized('Auth token required',
+                                          description,
+                                          challenges,
+                                          href='http://docs.example.com/auth')
 
         user_details = {
             'uuid': str(uuid.uuid4()),
-            'permissions': ['can_view_recommendations']
+            'permissions': ['can_view_recommendations', 'can_view_homepage']
         }
 
         resp.body = json.dumps(user_details)
 
 
-api = falcon.API()
+api = falcon.API(middleware=[
+    FuzzingMiddleware()
+])
 api.add_route('/authenticate', AuthenticationResource())
