@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import falcon
-import pybreaker
 import random
 import statsd
 import time
@@ -10,7 +9,6 @@ from apiclient import ApiClient
 
 
 auth_client = ApiClient('authentication')
-auth_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
 
 c = statsd.StatsClient('graphite', 2003)
 
@@ -19,7 +17,7 @@ class FuzzingMiddleware:
     def process_request(self, req, resp):
         # Sometimes, the call takes 10 seconds. Oh, no!
         if random.randint(1, 3) == 1:
-            time.sleep(5)
+            time.sleep(3)
 
 
 class PermissionsMiddleware:
@@ -29,15 +27,10 @@ class PermissionsMiddleware:
     def process_request(self, req, resp):
         token = req.get_header('Authorization')
         auth_headers = {'Authorization': token} if token else None
+        auth_response = auth_client.post(headers=auth_headers)
 
-        try:
-            auth_response = auth_breaker.call(auth_client.post, headers=auth_headers)
-        except ConnectionError:
-            c.incr('authorization.circuitbreaker.connection_error')
-            return False
-        except pybreaker.CircuitBreakerError:
-            c.incr('authorization.circuitbreaker.error')
-            return False
+        if not auth_response:
+            raise falcon.HTTPInternalServerError('Server error', 'There was a server error')
 
         if auth_headers:
             req.context['auth_header'] = auth_headers

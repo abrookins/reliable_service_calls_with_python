@@ -9,22 +9,23 @@ from middleware import PermissionsMiddleware
 from apiclient import ApiClient
 
 
-rec_client = ApiClient('recommendations')
-popularity_client = ApiClient('popular')
+recommended = ApiClient('recommendations')
+popular = ApiClient('popular')
+
+recommendations_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
+popular_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
 
 
 class HomepageResource:
     def on_get(self, req, resp):
         """Return data for the homepage."""
         auth_header = req.context.get('auth_header')
+        recommendations = recommended.get().json()
 
-        try:
-            request = rec_client.get(headers=auth_header)
-            recommendations = request.json()
-        except ConnectionError:
-            request = popularity_client.get(headers=auth_header)
-            recommendations = request.json()
-        except (pybreaker.CircuitBreakerError, Exception):
+        if not recommendations:
+            recommendations = popular.get(headers=auth_header).json()
+
+        if not recommendations:
             recommendations = []
 
         resp.body = json.dumps({

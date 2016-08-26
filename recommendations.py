@@ -4,7 +4,7 @@ import falcon
 import json
 import statsd
 
-from middleware import PermissionsMiddleware
+from middleware import PermissionsMiddleware, FuzzingMiddleware
 
 c = statsd.StatsClient('graphite', 2003)
 
@@ -28,6 +28,7 @@ class RecommendationsResource:
 
 
 api = falcon.API(middleware=[
-    PermissionsMiddleware('can_view_recommendations')
+    PermissionsMiddleware('can_view_recommendations'),
+    FuzzingMiddleware()
 ])
 api.add_route('/recommendations', RecommendationsResource())

@@ -33,7 +33,7 @@ popular:
   build: .
   ports:
     - "8003:8003"
-  command: /usr/local/bin/gunicorn popular:api -w 2 -b :8003
+  command: /usr/local/bin/gunicorn popular_items:api -w 2 -b :8003
   links:
     - authentication
     - graphite
