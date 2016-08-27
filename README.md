@@ -1,6 +1,6 @@
 # Reliable service calls with Python
 
-This project is based heavily on Chapter 5, "Stability Patterns," of the book *Release It!* (2007) by Michael Nygard.
+This project is based heavily on Chapter 5, "Stability Patterns," of the book *Release It!* by Michael Nygard.
 
 A detailed README and robust code examples will explain how to use core stability patterns to make service calls in Python more reliable. These include:
 
