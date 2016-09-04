@@ -12,24 +12,19 @@ from apiclient import ApiClient
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
 
-recommendations_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
-popular_breaker = pybreaker.CircuitBreaker(fail_max=1, reset_timeout=30)
-
 
 class HomepageResource:
     def on_get(self, req, resp):
         """Return data for the homepage."""
         auth_header = req.context.get('auth_header')
-        recommendations = recommended.get().json()
-
-        if not recommendations:
-            recommendations = popular.get(headers=auth_header).json()
-
-        if not recommendations:
-            recommendations = []
+        recommendations = recommended.get(headers=auth_header)
+        recommendations = recommendations.json() if recommendations else []
+        popular_items = popular.get(headers=auth_header)
+        popular_items = popular_items.json() if popular_items else []
 
         resp.body = json.dumps({
-            'recommendations': recommendations
+            'recommendations': recommendations,
+            'popular_items': popular_items
         })
 
 

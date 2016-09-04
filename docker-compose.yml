@@ -3,40 +3,56 @@ authentication:
   build: .
   ports:
     - "8000:8000"
-  command: /usr/local/bin/gunicorn auth:api -w 2 -b :8000
+  command: /usr/local/bin/gunicorn auth:api --reload --log-level debug -w 2 -b :8000
   links:
     - graphite
+    - redis
+  volumes:
+    - .:/code
 
 home:
   restart: always
   build: .
   ports:
     - "8001:8001"
-  command: /usr/local/bin/gunicorn homepage:api -w 2 -b :8001
+  command: /usr/local/bin/gunicorn homepage:api --reload --log-level debug -w 8 -b :8001
   links:
     - authentication
     - recommendations
+    - popular
     - graphite
+    - redis
+  volumes:
+    - .:/code
+
 
 recommendations:
   restart: always
   build: .
   ports:
     - "8002:8002"
-  command: /usr/local/bin/gunicorn recommendations:api -w 2 -b :8002
+  command: /usr/local/bin/gunicorn recommendations:api --reload --log-level debug -w 2 -b :8002
   links:
     - authentication
     - graphite
+    - redis
+  volumes:
+    - .:/code
+
 
 popular:
   restart: always
   build: .
   ports:
     - "8003:8003"
-  command: /usr/local/bin/gunicorn popular_items:api -w 2 -b :8003
+  command: /usr/local/bin/gunicorn popular_items:api --reload --log-level debug -w 2 -b :8003
   links:
     - authentication
     - graphite
+    - redis
+  volumes:
+    - .:/code
+
 
 nginx:
   restart: always
@@ -59,3 +75,9 @@ graphite:
     - "2024:2024"
     - "8127:8126"
     - "8125:8125/udp"
+
+redis:
+  restart: always
+  image: redis
+  ports:
+    - "6379"

@@ -5,8 +5,6 @@ import json
 import uuid
 import statsd
 
-from middleware import FuzzingMiddleware
-
 
 c = statsd.StatsClient('graphite', 2003)
 
@@ -34,7 +32,5 @@ class AuthenticationResource:
         resp.body = json.dumps(user_details)
 
 
-api = falcon.API(middleware=[
-    FuzzingMiddleware()
-])
+api = falcon.API()
 api.add_route('/authenticate', AuthenticationResource())

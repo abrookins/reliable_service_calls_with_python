@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import falcon
-import random
+import logging
+import redis
 import statsd
 import time
 
@@ -10,33 +11,56 @@ from apiclient import ApiClient
 
 auth_client = ApiClient('authentication')
 
-c = statsd.StatsClient('graphite', 2003)
+c = statsd.StatsClient('graphite', port=2003)
+
+r = redis.StrictRedis(host="redis", port=6379, db=0)
+
+log = logging.getLogger(__name__)
 
 
 class FuzzingMiddleware:
+    """Middleware that simulates network latency.
+
+    If we are in a simulated outage condition, the wrapped endpoint responds
+    with a three second delay, which should exhaust the timeouts that all
+    clients use.
+    """
     def process_request(self, req, resp):
-        # Sometimes, the call takes 10 seconds. Oh, no!
-        if random.randint(1, 3) == 1:
-            time.sleep(3)
+        outage = r.get(req.path)
+        if outage:
+            outage = outage.decode('utf-8')
+        if outage == 'true':
+            log.info('Delaying response time: {}'.format(outage))
+            time.sleep(5)
 
 
 class PermissionsMiddleware:
+    """Middleware that requires a given permission.
+
+    This middleware should receive a ``permission`` string on init,
+    which identifies a single permission, as a string, that the
+    user must possess to access the wrapped endpoint.
+    """
     def __init__(self, permission):
         self._required_permission = permission
 
     def process_request(self, req, resp):
         token = req.get_header('Authorization')
-        auth_headers = {'Authorization': token} if token else None
+
+        if not token:
+            raise falcon.HTTPUnauthorized('Auth token required',
+                                          '',
+                                          '',
+                                          href='http://docs.example.com/auth')
+
+        auth_headers = {'Authorization': token}
         auth_response = auth_client.post(headers=auth_headers)
 
         if not auth_response:
             raise falcon.HTTPInternalServerError('Server error', 'There was a server error')
 
-        if auth_headers:
-            req.context['auth_header'] = auth_headers
-
         if auth_response.status_code == 401:
-            raise falcon.HTTPUnauthorized('Auth token required',
+            raise falcon.HTTPUnauthorized('Authorization failed',
                                           '',
                                           '',
                                           href='http://docs.example.com/auth')
@@ -52,6 +76,8 @@ class PermissionsMiddleware:
                                        href='http://docs.example.com/auth')
 
         c.incr('authorization.authorization_success')
+
+        req.context['auth_header'] = auth_headers
         req.context['user_details'] = user_details
 
     def _has_permission(self, user_details):

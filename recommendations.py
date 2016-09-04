@@ -2,11 +2,17 @@
 # encoding: utf-8
 import falcon
 import json
+import logging
+import redis
 import statsd
 
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
 c = statsd.StatsClient('graphite', 2003)
+
+r = redis.StrictRedis(host="redis", port=6379, db=0)
+
+log = logging.getLogger(__name__)
 
 
 class RecommendationsResource:
@@ -26,6 +32,20 @@ class RecommendationsResource:
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))
 
+    def on_post(self, req, resp):
+        """Toggle the outage condition."""
+        c.incr('recommendations.post')
+        key = req.path
+        outage = r.get(key)
+        if outage:
+            outage = outage.decode('utf-8')
+        log.error(outage)
+        if outage == 'true':
+            new_value = 'false'
+        else:
+            new_value = 'true'
+        r.set(key, new_value.encode('utf-8'))
+        resp.body = json.dumps({'outage': new_value})
 
 api = falcon.API(middleware=[
     PermissionsMiddleware('can_view_recommendations'),

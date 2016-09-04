@@ -5,6 +5,8 @@ import falcon
 import json
 import statsd
 
+from middleware import FuzzingMiddleware
+
 
 c = statsd.StatsClient('graphite', 2003)
 
@@ -18,5 +20,7 @@ class PopularItemsResource:
         resp.body = json.dumps(most_popular_yesterday)
 
 
-api = falcon.API()
-api.add_route('/popular', PopularItemsResource())
+api = falcon.API(middleware=[
+    FuzzingMiddleware()
+])
+api.add_route('/popular_items', PopularItemsResource())
