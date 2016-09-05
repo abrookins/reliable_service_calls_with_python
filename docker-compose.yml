@@ -3,7 +3,7 @@ authentication:
   build: .
   ports:
     - "8000:8000"
-  command: /usr/local/bin/gunicorn auth:api --reload --log-level debug -w 2 -b :8000
+  command: /usr/local/bin/gunicorn auth:api --reload --log-level debug -w 8 -b :8000
   links:
     - graphite
     - redis
@@ -25,34 +25,31 @@ home:
   volumes:
     - .:/code
 
-
 recommendations:
   restart: always
   build: .
   ports:
     - "8002:8002"
-  command: /usr/local/bin/gunicorn recommendations:api --reload --log-level debug -w 2 -b :8002
+  command: /usr/local/bin/gunicorn recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
   links:
     - authentication
     - graphite
     - redis
   volumes:
     - .:/code
-
 
 popular:
   restart: always
   build: .
   ports:
     - "8003:8003"
-  command: /usr/local/bin/gunicorn popular_items:api --reload --log-level debug -w 2 -b :8003
+  command: /usr/local/bin/gunicorn popular_items:api --reload --log-level debug -w 8 -b :8003
   links:
     - authentication
     - graphite
     - redis
   volumes:
     - .:/code
-
 
 nginx:
   restart: always

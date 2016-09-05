@@ -2,13 +2,13 @@
 # encoding: utf-8
 import falcon
 import json
-
-import pybreaker
+import statsd
 
 from middleware import PermissionsMiddleware
 from apiclient import ApiClient
 
 
+c = statsd.StatsClient('graphite', 8125)
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
 
@@ -26,6 +26,8 @@ class HomepageResource:
             'recommendations': recommendations,
             'popular_items': popular_items
         })
+
+        c.incr('homepage.get')
 
 
 api = falcon.API(middleware=[

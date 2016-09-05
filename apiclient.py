@@ -4,15 +4,18 @@ import logging
 import pybreaker
 import requests
 import statsd
+import sys
+
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
 from jittery_retry import JitteryRetry
 
 
-c = statsd.StatsClient('graphite', 2003)
-
+c = statsd.StatsClient('graphite', 8125)
 log = logging.getLogger(__name__)
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
 
 urls = {
     'authentication': 'http://authentication:8000/authenticate',
@@ -28,7 +31,7 @@ circuit_breakers = {
 
 
 class ApiClient(requests.Session):
-    def __init__(self, service, max_retries=2, timeout=1):
+    def __init__(self, service, max_retries=1, timeout=1):
         super().__init__()
         self.service = service
         self.circuit_breaker = circuit_breakers[service]
@@ -44,13 +47,13 @@ class ApiClient(requests.Session):
         try:
             request = self.circuit_breaker.call(method, self.url, **kwargs)
         except ConnectionError:
-            log.exception('Connection error when trying {}'.format(self.url))
+            log.error('Connection error when trying {}'.format(self.url))
             c.incr('circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout when trying {}'.format(self.url))
             c.incr('circuitbreaker.{}.timeout'.format(self.service))
-        except pybreaker.CircuitBreakerError:
-            log.exception('Circuit breaker error: {}'.format(self.url))
+        except pybreaker.CircuitBreakerError as e:
+            log.error(e)
             c.incr('circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: {}'.format(self.url))

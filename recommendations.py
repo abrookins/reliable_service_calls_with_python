@@ -5,14 +5,15 @@ import json
 import logging
 import redis
 import statsd
+import sys
 
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
 c = statsd.StatsClient('graphite', 2003)
-
 r = redis.StrictRedis(host="redis", port=6379, db=0)
-
 log = logging.getLogger(__name__)
+
+logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class RecommendationsResource:
@@ -46,6 +47,7 @@ class RecommendationsResource:
             new_value = 'true'
         r.set(key, new_value.encode('utf-8'))
         resp.body = json.dumps({'outage': new_value})
+
 
 api = falcon.API(middleware=[
     PermissionsMiddleware('can_view_recommendations'),
