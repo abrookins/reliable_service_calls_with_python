@@ -19,9 +19,9 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 class RecommendationsResource:
     """A resource that returns recommendations for a user.
 
-    GET from the endpoint to see recommendations:
+    GET from this endpoint to see recommendations:
 
-        $ curl -H "Authorization: Token 0x132" "http://192.168.99.100:8001/home"
+        $ curl -v -H "Authorization: Token 0x132" "http://192.168.99.100:8002/recommendations"
 
     Response:
 
