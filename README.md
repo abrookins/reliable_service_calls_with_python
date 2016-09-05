@@ -8,3 +8,7 @@ A detailed README and robust code examples will explain how to use core stabilit
 * Using timeouts
 * Using retries, with and without "fuzzing" (and why you want to fuzz retries)
 * Using graceful fallbacks
+
+## Preview
+
+![Graphs during an outage simulation](images/outage_simulation.png)
