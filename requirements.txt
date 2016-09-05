@@ -6,3 +6,7 @@ redis==2.10.5
 requests==2.11.0
 six==1.10.0
 statsd==3.2.1
+
+# Testing
+pytest==3.0.2
+ipdb==0.10.1

@@ -2,7 +2,7 @@
 # encoding: utf-8
 from unittest import TestCase
 
-from urllib3.exceptions import ProtocolError
+from requests.packages.urllib3.exceptions import ProtocolError
 
 from jittery_retry import JitteryRetry
 

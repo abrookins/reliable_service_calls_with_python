@@ -1,5 +1,15 @@
+tests:
+  restart: "no"
+  build: .
+  links:
+    - graphite
+    - redis
+  volumes:
+    - .:/code
+  command: "true"
+
 authentication:
-  restart: always
+  restart: "no"
   build: .
   ports:
     - "8000:8000"
@@ -11,7 +21,7 @@ authentication:
     - .:/code
 
 home:
-  restart: always
+  restart: "no"
   build: .
   ports:
     - "8001:8001"
@@ -26,7 +36,7 @@ home:
     - .:/code
 
 recommendations:
-  restart: always
+  restart: "no"
   build: .
   ports:
     - "8002:8002"
@@ -39,7 +49,7 @@ recommendations:
     - .:/code
 
 popular:
-  restart: always
+  restart: "no"
   build: .
   ports:
     - "8003:8003"
@@ -52,7 +62,7 @@ popular:
     - .:/code
 
 nginx:
-  restart: always
+  restart: "no"
   build: ./nginx/
   ports:
     - "80:80"
@@ -62,7 +72,7 @@ nginx:
     - ./nginx/conf.d:/etc/nginx/conf.d
 
 graphite:
-  restart: always
+  restart: "no"
   build: ./graphite/
   ports:
     - "81:80"
@@ -74,7 +84,7 @@ graphite:
     - "8125:8125/udp"
 
 redis:
-  restart: always
+  restart: "no"
   image: redis
   ports:
     - "6379"
