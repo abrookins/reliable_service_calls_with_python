@@ -17,6 +17,26 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class RecommendationsResource:
+    """A resource that returns recommendations for a user.
+
+    GET from the endpoint to see recommendations:
+
+        $ curl -H "Authorization: Token 0x132" "http://192.168.99.100:8001/home"
+
+    Response:
+
+        < HTTP/1.1 200 OK
+        < Server: gunicorn/19.6.0
+        < Date: Mon, 05 Sep 2016 21:58:02 GMT
+        < Connection: close
+        < content-length: 48
+        < content-type: application/json; charset=UTF-8
+        <
+        * Closing connection 0
+        [12, 23, 100, 122, 220, 333, 340, 400, 555, 654]
+
+    Note that the request must include an authentication token.
+    """
     def _recommended_for_user(self, user_uuid):
         """Return items recommended for a user."""
         # Pretend we looked these numbers up by ``user_uuid``, probably in a
@@ -28,20 +48,6 @@ class RecommendationsResource:
         c.incr('recommendations.get')
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))
-
-    def on_post(self, req, resp):
-        """Toggle the outage condition."""
-        c.incr('recommendations.post')
-        key = req.path
-        outage = r.get(key)
-        if outage:
-            outage = outage.decode('utf-8')
-        if outage == 'true':
-            new_value = 'false'
-        else:
-            new_value = 'true'
-        r.set(key, new_value.encode('utf-8'))
-        resp.body = json.dumps({'outage': new_value})
 
 
 api = falcon.API(middleware=[

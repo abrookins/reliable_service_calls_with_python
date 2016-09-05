@@ -10,6 +10,24 @@ c = statsd.StatsClient('graphite', 2003)
 
 
 class AuthenticationResource:
+    """Verify an authentication token.
+
+    POST to this endpoint to retrieve authentication details for a user.
+
+        $ curl -v -H "Authorization: Token 0x132" -X POST "http://192.168.99.100:8000/authenticate"
+
+    Response:
+
+        < HTTP/1.1 200 OK
+        < Server: gunicorn/19.6.0
+        < Date: Mon, 05 Sep 2016 22:05:01 GMT
+        < Connection: close
+        < content-length: 114
+        < content-type: application/json; charset=UTF-8
+        <
+        * Closing connection 0
+        {"permissions": ["can_view_recommendations", "can_view_homepage"], "uuid": "f180f501-2378-4292-b364-d4a0d1b52c51"}
+    """
     def on_post(self, req, resp):
         """Return authentication details if a valid token was provided."""
         token = req.get_header('Authorization')

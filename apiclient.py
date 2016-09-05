@@ -74,7 +74,7 @@ class ApiClient(requests.Session):
             kwargs['timeout'] = self.timeout
         return self._request(super().post, self.url, data, json, **kwargs)
 
-    def delete(self, url, **kwargs):
+    def delete(self, **kwargs):
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self.timeout
         return self._request(super().delete, self.url, **kwargs)

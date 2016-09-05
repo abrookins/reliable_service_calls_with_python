@@ -61,6 +61,18 @@ popular:
   volumes:
     - .:/code
 
+outage:
+  restart: "no"
+  build: .
+  ports:
+    - "8004:8004"
+  command: /usr/local/bin/gunicorn outage:api --reload --log-level debug -w 8 -b :8004
+  links:
+    - graphite
+    - redis
+  volumes:
+    - .:/code
+
 nginx:
   restart: "no"
   build: ./nginx/
