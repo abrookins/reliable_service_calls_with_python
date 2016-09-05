@@ -24,6 +24,7 @@ class MockPermissionsMiddleware:
 
 class TestRecommendations(TestCase):
     def setUp(self):
+        super().setUp()
         self.api = falcon.API(middleware=[
             MockPermissionsMiddleware()
         ])
