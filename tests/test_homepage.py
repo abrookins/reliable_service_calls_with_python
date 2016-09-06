@@ -4,17 +4,10 @@ from unittest import mock
 from falcon.testing import TestCase
 
 from homepage import HomepageResource
+from . import MockResponse
 
 
 def mock_200_responses(*args, **kwargs):
-    class MockResponse:
-        def __init__(self, json_data, status_code):
-            self.json_data = json_data
-            self.status_code = status_code
-
-        def json(self):
-            return self.json_data
-
     if args[0] == 'http://recommendations:8002/recommendations':
         return MockResponse([1, 2, 3], 200)
     elif args[0] == 'http://popular:8003/popular_items':

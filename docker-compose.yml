@@ -3,10 +3,10 @@ tests:
   build: .
   links:
     - graphite
-    - redis
+    - test-redis:redis
   volumes:
     - .:/code
-  command: "true"
+  command: ["py.test"]
 
 authentication:
   restart: "no"
@@ -100,3 +100,9 @@ redis:
   image: redis
   ports:
     - "6379"
+
+test-redis:
+  restart: "no"
+  image: redis
+  ports:
+    - "6378:6379"

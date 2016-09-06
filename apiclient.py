@@ -45,7 +45,7 @@ class ApiClient(requests.Session):
         result = None
 
         try:
-            request = self.circuit_breaker.call(method, self.url, **kwargs)
+            result = self.circuit_breaker.call(method, self.url, **kwargs)
         except ConnectionError:
             log.error('Connection error when trying {}'.format(self.url))
             c.incr('circuitbreaker.{}.connection_error'.format(self.service))
@@ -58,9 +58,6 @@ class ApiClient(requests.Session):
         except Exception:
             log.exception('Unexpected error connecting to: {}'.format(self.url))
             c.incr('circuitbreaker.{}.error'.format(self.service))
-        else:
-            if request.status_code == requests.codes.ok:
-                result = request
 
         return result
 

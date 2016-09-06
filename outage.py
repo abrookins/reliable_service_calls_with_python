@@ -2,9 +2,10 @@
 # encoding: utf-8
 import json
 import logging
+import sys
+
 import falcon
 import redis
-import sys
 
 import apiclient
 

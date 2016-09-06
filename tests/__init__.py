@@ -1,6 +1,13 @@
 #!/usr/bin/env python
 # encoding: utf-8
-"""
-Created by Andrew Brookins on Sep 02 6:10 AM 2016
-Copyright (c) 2016 Safari Books Online. All rights reserved.
-"""
+
+class MockResponse:
+    """A helper for mocking `request` library responses."""
+    def __init__(self, json_data, status_code):
+        self.json_data = json_data
+        self.status_code = status_code
+
+    def json(self):
+        return self.json_data
+
+
