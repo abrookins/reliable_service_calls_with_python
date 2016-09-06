@@ -8,7 +8,7 @@ patterns to make service calls in Python more reliable. These include:
 
 * Using the Circuit Breaker pattern
 * Using timeouts
-* Using retries with incremental backoff and random jitter (for more on why you should use random jitter, see https://www.awsarchitectureblog.com/2015/03/backoff.html)
+* Using retries with incremental backoff and random jitter (based on: https://www.awsarchitectureblog.com/2015/03/backoff.html)
 * Using graceful fallbacks
 
 ## Preview
