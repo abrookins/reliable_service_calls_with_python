@@ -68,7 +68,7 @@ class TestApiClient(TestCase):
         self.client.circuit_breaker.close()
 
     @mock.patch('requests.Session.get', side_effect=mock_timeout)
-    def test_opens_circuit_breaker(self, mock_get):
+    def test_opens_circuit_breaker_after_reaching_max_error_count(self, mock_get):
         assert self.client.circuit_breaker.fail_counter == 0
         assert self.client.circuit_breaker.current_state == 'closed'
         assert self.client.circuit_breaker.fail_max == 5

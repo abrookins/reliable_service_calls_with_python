@@ -27,6 +27,9 @@ class AuthenticationResource:
         <
         * Closing connection 0
         {"permissions": ["can_view_recommendations", "can_view_homepage"], "uuid": "f180f501-2378-4292-b364-d4a0d1b52c51"}
+
+    Note: for the purposes of easier testing, this endpoint considers *all*
+    tokens valid.
     """
     def on_post(self, req, resp):
         """Return authentication details if a valid token was provided."""

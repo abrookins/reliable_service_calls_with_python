@@ -29,7 +29,7 @@ class TestAuthentication(TestCase):
         self.api.add_route('/home', HomepageResource())
 
     @mock.patch('requests.Session.get', side_effect=mock_200_responses)
-    def test_expected_data(self, mock_get):
+    def test_get_returns_expected_data(self, mock_get):
         resp = self.simulate_get('/home')
         expected_data = {
             'recommendations': [1, 2, 3],

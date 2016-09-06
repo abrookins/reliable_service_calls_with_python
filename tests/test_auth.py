@@ -16,7 +16,8 @@ class TestAuthentication(TestCase):
         assert 401 == resp.status_code
 
     @mock.patch('uuid.uuid4')
-    def test_user_details_with_valid_token(self, mock_uuid4):
+    def test_post_returns_user_details_with_valid_token(self, mock_uuid4):
+        # Note that this auth endpoint considers all tokens valid.
         mock_uuid4.return_value = '1234'
         resp = self.simulate_post('/authenticate', headers={"Authorization": "1234"})
         expected_data = {
