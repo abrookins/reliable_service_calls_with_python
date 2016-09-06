@@ -9,7 +9,7 @@ import sys
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
-from jittery_retry import JitteryRetry
+from jittery_retry import RetryWithFullJitter
 
 
 c = statsd.StatsClient('graphite', 8125)
@@ -38,7 +38,7 @@ class ApiClient(requests.Session):
         self.url = urls[service]
         self.timeout = timeout
 
-        adapter = HTTPAdapter(max_retries=JitteryRetry(total=max_retries))
+        adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
         self.mount(self.url, adapter)
 
     def _request(self, method, *args, **kwargs):

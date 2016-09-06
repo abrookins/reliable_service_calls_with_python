@@ -4,7 +4,7 @@ from unittest import TestCase, mock
 from requests.exceptions import ConnectionError, Timeout
 
 import apiclient
-from jittery_retry import JitteryRetry
+from jittery_retry import RetryWithFullJitter
 from . import MockResponse
 
 
@@ -38,7 +38,7 @@ class TestApiClient(TestCase):
 
     def test_uses_jittery_retry(self):
         max_retries = self.client.adapters['http://recommendations:8002/recommendations'].max_retries
-        assert isinstance(max_retries, JitteryRetry)
+        assert isinstance(max_retries, RetryWithFullJitter)
 
     @mock.patch('requests.Session.get', side_effect=mock_connection_error)
     def test_circuit_breaker_tracks_connection_error(self, mock_get):
