@@ -9,7 +9,7 @@ patterns to make service calls in Python more reliable. These patterns include:
 https://www.awsarchitectureblog.com/2015/03/backoff.html)
 
 This project is based heavily on Chapter 5, "Stability Patterns," of the book
-Release It!* by Michael Nygard.
+*Release It!* by Michael Nygard.
 
 
 ## Preview
