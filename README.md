@@ -117,7 +117,7 @@ But what caused the circuit breakers to open?
 ### If the circuit breakers were open, why did we see connection errors during the outage?
 
 
-## Simulating total failure of a dependent service without graceful degradation (authentication)
+## Simulating total failure of an upstream service without graceful degradation (authentication)
 
 ## Simulating dependent service non-total failure (performance problems)
 
