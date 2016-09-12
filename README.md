@@ -9,7 +9,7 @@ upstream web service.
 
 The patterns demonstrated include:
 
-* **Circuit breakers**: mechanisms that stop executing code after reading a failure threshold
+* **Circuit breakers**: mechanisms that stop executing code after reaching a failure threshold
 * **Timeouts**: deadlines that network requests must meet, after which the program stops waiting
 * **Retries with exponential backoff and random jitter**: attempts to try a failed network request again
 * **Graceful degradation**: falling back to a degraded state; i.e., returning partial data
