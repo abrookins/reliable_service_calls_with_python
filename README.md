@@ -1,21 +1,21 @@
-# Reliable service calls with Python
+# Making reliable network calls with Python
 
-This project demonstrates stability patterns that will make your service calls
+This project demonstrates stability patterns that will make your network calls
 in Python more reliable.
 
 The form of the demonstration is a set of backend web services against which
-various common failure modes were simulated. For example, total failure of an
+various common failure modes are simulated. For example, total failure of an
 upstream web service.
 
-The patterns demonstrated include, with brief definitions (you can find better definitions elsewhere):
+The patterns demonstrated include:
 
-* **Circuit breakers**: mechanisms that stop executing code paths after calls reach a failure threshold
-* **Timeouts**: deadlines that our network requests must meet, after which the program stops waiting
-* **Retries with exponential backoff and random jitter**: attempts by the program to try a failed network request again
+* **Circuit breakers**: mechanisms that stop executing code after reading a failure threshold
+* **Timeouts**: deadlines that network requests must meet, after which the program stops waiting
+* **Retries with exponential backoff and random jitter**: attempts to try a failed network request again
 * **Graceful degradation**: falling back to a degraded state; i.e., returning partial data
-* **"Generic Gateway"**: a collection of code that templates error handling, especially around network requests
+* **Generic gateway**: a collection of code that templates error handling, especially around network requests
 
-The "generic Gateway" and "circuit breaker" pattern are based on Chapter 5,
+The "generic gateway" and "circuit breaker" patterns are based on Chapter 5,
 "Stability Patterns," of the book *Release It!* by Michael Nygard.
 
 The idea to use exponential backoff with "jitter" is based on [*Exponential
@@ -24,18 +24,19 @@ published in the *AWS Architecture Blog*.
 
 ## Introducing the demo system
 
-The simulations run to produce this document use the "homepage" service included
-in this project. The homepage service acts as a composition layer that returns a
+The simulations run for the demonstration use the "homepage" service included in
+this project. The homepage service acts as a composition layer that returns a
 JSON response containing data needed for a client to render a user's theoretical
 homepage:
 
 * Popular items (from the popularity service)
 * Items recommended for this user (from the recommendations service)
 
-(What these items are is unspecified.)
+(What these items are is intentionally unspecified.)
 
 The service requires a token that is forwarded to an authentication system that
-returns the user's permissions.
+returns the user's permissions, for a total of three network requests required
+to return the response (authentication, recommendations, and popular items).
 
 Here is an example request made of this service:
 
@@ -58,10 +59,10 @@ As you can see, we get two lists: 'recommendations' and 'popular_items.'
 ## Method of inquiry
 
 This document will proceed through a series of simulations, starting with the
-total failure of an upstream service. Each simulation will give us a chance to
-see Python code examples related to the pattern, and to see how the pattern
-behaves under specific failure conditions.
-
+total failure of an upstream service. These simulations will show how the
+stability patterns behave under specific failure conditions, while also
+providing chances to examine Python code examples.
+ 
 With those introductions out of the way, let's start simulating!
 
 ## Simulation 1: total failure of an upstream service with graceful degradation (recommendations)
