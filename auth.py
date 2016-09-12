@@ -6,7 +6,7 @@ import uuid
 import statsd
 
 
-c = statsd.StatsClient('graphite', 2003)
+c = statsd.StatsClient('graphite', 8125)
 
 
 class AuthenticationResource:

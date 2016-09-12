@@ -9,7 +9,7 @@ import sys
 
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
-c = statsd.StatsClient('graphite', 2003)
+c = statsd.StatsClient('graphite', 8125)
 r = redis.StrictRedis(host="redis", port=6379, db=0)
 log = logging.getLogger(__name__)
 

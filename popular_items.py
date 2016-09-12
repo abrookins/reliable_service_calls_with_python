@@ -8,7 +8,7 @@ import statsd
 from middleware import FuzzingMiddleware
 
 
-c = statsd.StatsClient('graphite', 2003)
+c = statsd.StatsClient('graphite', 8125)
 
 
 class PopularItemsResource:
