@@ -65,7 +65,7 @@ providing chances to examine Python code examples.
  
 With those introductions out of the way, let's start simulating!
 
-## Simulation 1: total failure of an upstream service with graceful degradation (recommendations)
+## Simulation 1: total failure of an upstream service with retries (recommendations)
 
 In this simulation, our homepage service is humming along, serving popularity
 and recommendations data it pulled from two upstream services, when suddenly,
@@ -88,30 +88,44 @@ The graph shows a timeline of events related to the outage:
 *Very interesting, but I have questions*, you might be thinking! Here are a few
 worth pondering:
 
+### Is this a good graph?
+
+Aside from the fact that an outage occurred, the graph is pretty good. While
+the recommendations outage was going on, the homepage service maintained 
+decent availability.
+
+Without timeouts or circuit breakers, the homepage service would have been
+unavailable until the outage was over. But that's not what happened --
+homepage stayed up.
+
+There was just one problem: at the start of the outage, homepage service
+availability dropped. It recovered, but we can probably do better.
+
 ### Why did homepage availability drop at the start of the outage, and what can we do about that?
 
-The short drop in availability reflects the system trying, and failing, to
-handle connection errors to the upstream recommendations service.
+The short drop in homepage service availability reflects the system trying, and
+failing, to handle connection errors to the upstream recommendations service.
 
-The homepage service's connection to the recommendations service uses the
-`ApiClient` class. `ApiClient` applies timeouts, exponential retries with random
-jitter, and circuit breakers to all network requests made by services in the
-project.
+In this simulation, the homepage service's connection to the recommendations
+service used the `ApiClient` class configured to retry with random jitter (and
+to use a circuit breaker).
 
-In this case, network requests from the homepage service to the recommendations
-service began to fail, generating errors. Retries and timeouts couldn't help
-here -- the recommendations service failed 100% of the time.
-
-Without timeouts or circuit breakers, homepage availability would have dropped
-until the outage was over. But that's not what happened...
+Retries and timeouts couldn't help here -- the recommendations service failed
+100% of the time during the outage. We can do better by not using retries for
+our requests to the recommendations service.
 
 ### What caused the circuit breakers to open?
 
 Circuit breakers saved the homepage service: when they opened, the service
-stopped trying to get recommendations and instead degraded to only providing
-popular items.
+stopped trying to get recommendations and instead degraded to providing
+popular items only.
 
 But what caused the circuit breakers to open?
+
+The circuit breaker around homepage requests to the recommendations service kept
+track of any errors that occurred during requests. When the outage began, requests
+began generating connection errors. After the circuit breaker on each worker saw
+five of these, the circuit breaker opened.
 
 ### Why, after the circuit breakers opened, did homepage availability get better than before the outage started?
 ### If the circuit breakers were open, why did we see connection errors during the outage?
