@@ -65,7 +65,7 @@ providing chances to examine Python code examples.
  
 With those introductions out of the way, let's start simulating!
 
-## Simulation 1: total failure of an upstream service with retries (recommendations)
+## Simulation 1: total failure of an upstream service (recommendations), using retries
 
 In this simulation, our homepage service is humming along, serving popularity
 and recommendations data it pulled from two upstream services, when suddenly,

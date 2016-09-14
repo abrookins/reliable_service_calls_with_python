@@ -31,15 +31,16 @@ circuit_breakers = {
 
 
 class ApiClient(requests.Session):
-    def __init__(self, service, max_retries=1, timeout=1):
+    def __init__(self, service, timeout=1, max_retries=None):
         super().__init__()
         self.service = service
         self.circuit_breaker = circuit_breakers[service]
         self.url = urls[service]
         self.timeout = timeout
 
-        adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
-        self.mount(self.url, adapter)
+        if max_retries:
+            adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
+            self.mount(self.url, adapter)
 
     def _request(self, method, *args, **kwargs):
         result = None
