@@ -36,7 +36,8 @@ class ReportResource:
     def on_get(self, req, resp):
         """Return a report of all current stats."""
         keys = r.keys('stats\.*')
-        resp.body = json.dumps({'report': {key: r.get(key) for key in keys}})
+        resp.body = json.dumps({'report': {key.decode(): float(r.get(key).decode())
+                                           for key in keys}})
 
 
 api = falcon.API()

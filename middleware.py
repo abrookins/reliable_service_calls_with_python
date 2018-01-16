@@ -24,10 +24,8 @@ class FuzzingMiddleware:
     clients use.
     """
     def process_request(self, req, resp):
-        outage = r.get(req.path)
+        outage = r.sismember('outages', req.path)
         if outage:
-            outage = outage.decode('utf-8')
-        if outage == 'true':
             log.info('Delaying response time: {}'.format(outage))
             time.sleep(5)
 

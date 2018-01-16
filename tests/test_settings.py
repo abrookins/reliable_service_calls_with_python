@@ -3,43 +3,41 @@
 from unittest import mock
 
 import json
+import redis
 from falcon.testing import TestCase
 
 from settings import SettingsResource
+
+
+r = redis.StrictRedis(host="redis", port=6379, db=0)
 
 
 class TestSettingsResource(TestCase):
     def setUp(self):
         super().setUp()
         self.api.add_route('/settings', SettingsResource())
+        r.flushdb()
 
     def test_sending_bad_json(self):
         resp = self.simulate_put('/settings', body='boo')
         assert 400 == resp.status_code
 
-    @mock.patch('redis.StrictRedis.get')
-    @mock.patch('redis.StrictRedis.set')
-    def test_adds_a_new_setting(self, mock_redis_set, mock_redis_get):
-        mock_redis_get.return_value = {}
-        data = {'outages': {'recommendations': True}}
+    def test_adds_a_new_setting(self):
+        data = {'outages': ['recommendations']}
         resp = self.simulate_put('/settings', body=json.dumps(data))
-        assert mock_redis_get.called_with('settings')
-        assert mock_redis_set.called_with('settings', data)
         assert data == resp.json
+        assert r.smembers('outages') == {b'recommendations'}
 
-    @mock.patch('redis.StrictRedis.get')
-    @mock.patch('redis.StrictRedis.set')
-    def test_replaces_existing_settings(self, mock_redis_set, mock_redis_get):
-        mock_redis_get.return_value = {'outages': {'homepage': True}}
-        data = {'outages': {'recommendations': True}}
-        resp = self.simulate_put('/settings', body=json.dumps(data))
+    def test_replaces_existing_settings(self):
+        # Set initial settings
+        self.simulate_put('/settings', body=json.dumps({
+            'outages': ['homepage']
+        }))
+        # Overwrite initial settings
+        resp = self.simulate_put('/settings', body=json.dumps({
+            'outages': ['recommendations']
+        }))
 
-        expected = {
-            'outages': {
-                'recommendations': True
-            }
-        }
-
-        assert mock_redis_get.called_with('settings')
-        assert mock_redis_set.called_with('settings', data)
+        expected = {'outages': ['recommendations']}
         assert expected == resp.json
+        assert r.smembers('outages') == {b'recommendations'}

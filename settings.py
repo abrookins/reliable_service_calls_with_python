@@ -18,10 +18,10 @@ logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 class SettingsResource:
     """A resource that stores settings for the current simulation.
 
-    PUT to this endpoint to update the simulation's settings. The request
-    body will overwrite the current settings object. E.g.:
+    PUT to this endpoint to replace the simulation's settings with new ones.
+    E.g.:
 
-        $ curl -X PUT "http://192.168.99.100:8004/settings" {"recommendations": true}
+        $ curl -X PUT "http://192.168.99.100:8004/settings" {"outages": ["/recommendations"]}
 
     Response:
 
@@ -33,20 +33,29 @@ class SettingsResource:
         < content-type: application/json; charset=UTF-8
         <
         * Closing connection 0
-        {"outages": {"recommendations": "true"}}
+        {"outages": ["/recommendations"]}
+
+    Note: 'outages' is the only supported setting for now.
     """
-    SETTINGS_KEY = 'settings'
+    OUTAGES_KEY = 'outages'
 
     def on_put(self, req, resp):
-        """Change outage settings values."""
+        """Replace current simulation settings values."""
         try:
             settings = json.loads(req.stream.read())
         except (TypeError, json.JSONDecodeError):
             raise falcon.HTTPBadRequest('Bad request', 'Request body was not valid JSON')
 
-        r.set(self.SETTINGS_KEY, settings)
+        if self.OUTAGES_KEY not in settings:
+            raise falcon.HTTPBadRequest('Bad request', 'Valid settings are: "outages"')
+
+        r.delete(self.OUTAGES_KEY)
+
+        for path in settings['outages']:
+            r.sadd(self.OUTAGES_KEY, path)
+
         resp.body = json.dumps(settings)
 
 
 api = falcon.API()
-api.add_route('/outage/{service}', SettingsResource())
+api.add_route('/settings', SettingsResource())
