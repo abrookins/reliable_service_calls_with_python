@@ -2,8 +2,8 @@
 # encoding: utf-8
 import logging
 import pybreaker
+import redis
 import requests
-import statsd
 import sys
 
 from requests.adapters import HTTPAdapter
@@ -12,7 +12,7 @@ from requests.exceptions import ConnectionError, Timeout
 from jittery_retry import RetryWithFullJitter
 
 
-c = statsd.StatsClient('graphite', 8125)
+r = redis.StrictRedis(host="redis", port=6379, db=0)
 log = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
@@ -49,16 +49,16 @@ class ApiClient(requests.Session):
             result = self.circuit_breaker.call(method, self.url, **kwargs)
         except ConnectionError:
             log.error('Connection error when trying {}'.format(self.url))
-            c.incr('circuitbreaker.{}.connection_error'.format(self.service))
+            r.incr('stats.circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout when trying {}'.format(self.url))
-            c.incr('circuitbreaker.{}.timeout'.format(self.service))
+            r.incr('stats.circuitbreaker.{}.timeout'.format(self.service))
         except pybreaker.CircuitBreakerError as e:
             log.error(e)
-            c.incr('circuitbreaker.{}.breaker_open'.format(self.service))
+            r.incr('stats.circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: {}'.format(self.url))
-            c.incr('circuitbreaker.{}.error'.format(self.service))
+            r.incr('stats.circuitbreaker.{}.error'.format(self.service))
 
         return result
 

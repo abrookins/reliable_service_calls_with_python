@@ -2,13 +2,13 @@
 # encoding: utf-8
 import falcon
 import json
-import statsd
+import redis
 
 from middleware import PermissionsMiddleware
 from apiclient import ApiClient
 
 
-c = statsd.StatsClient('graphite', 8125)
+r = redis.StrictRedis(host="redis", port=6379, db=0)
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
 
@@ -47,7 +47,7 @@ class HomepageResource:
             'popular_items': popular_items
         })
 
-        c.incr('homepage.get')
+        r.incr('stats.homepage.get')
 
 
 api = falcon.API(middleware=[

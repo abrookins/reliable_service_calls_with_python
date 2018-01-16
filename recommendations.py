@@ -4,12 +4,10 @@ import falcon
 import json
 import logging
 import redis
-import statsd
 import sys
 
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
-c = statsd.StatsClient('graphite', 8125)
 r = redis.StrictRedis(host="redis", port=6379, db=0)
 log = logging.getLogger(__name__)
 
@@ -45,7 +43,7 @@ class RecommendationsResource:
 
     def on_get(self, req, resp):
         """Return recommendations for a user."""
-        c.incr('recommendations.get')
+        r.incr('stats.recommendations.get')
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))
 

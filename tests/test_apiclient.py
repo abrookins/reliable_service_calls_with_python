@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from unittest import TestCase, mock
+from unittest import TestCase, mock, skip
 from requests.exceptions import ConnectionError, Timeout
 
 import apiclient
@@ -31,13 +31,15 @@ class TestApiClient(TestCase):
     def tearDown(self):
         self.client.circuit_breaker.close()
 
-    def test_default_max_retries(self):
-        max_retries = self.client.adapters['http://recommendations:8002/recommendations'].max_retries
+    def test_with_max_retries(self):
+        client = apiclient.ApiClient('recommendations', max_retries=1)
+        max_retries = client.adapters['http://recommendations:8002/recommendations'].max_retries
         expected_max_retries = 1
         assert expected_max_retries == max_retries.total
 
     def test_uses_jittery_retry(self):
-        max_retries = self.client.adapters['http://recommendations:8002/recommendations'].max_retries
+        client = apiclient.ApiClient('recommendations', max_retries=1)
+        max_retries = client.adapters['http://recommendations:8002/recommendations'].max_retries
         assert isinstance(max_retries, RetryWithFullJitter)
 
     @mock.patch('requests.Session.get', side_effect=mock_connection_error)

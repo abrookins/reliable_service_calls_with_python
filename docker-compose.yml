@@ -2,7 +2,6 @@ tests:
   restart: "no"
   build: .
   links:
-    - graphite
     - test-redis:redis
   volumes:
     - .:/code
@@ -15,7 +14,6 @@ authentication:
     - "8000:8000"
   command: /usr/local/bin/gunicorn auth:api --reload --log-level debug -w 8 -b :8000
   links:
-    - graphite
     - redis
   volumes:
     - .:/code
@@ -30,7 +28,6 @@ home:
     - authentication
     - recommendations
     - popular
-    - graphite
     - redis
   volumes:
     - .:/code
@@ -43,7 +40,6 @@ recommendations:
   command: /usr/local/bin/gunicorn recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
   links:
     - authentication
-    - graphite
     - redis
   volumes:
     - .:/code
@@ -56,7 +52,6 @@ popular:
   command: /usr/local/bin/gunicorn popular_items:api --reload --log-level debug -w 8 -b :8003
   links:
     - authentication
-    - graphite
     - redis
   volumes:
     - .:/code
@@ -68,7 +63,6 @@ outage:
     - "8004:8004"
   command: /usr/local/bin/gunicorn outage:api --reload --log-level debug -w 8 -b :8004
   links:
-    - graphite
     - redis
   volumes:
     - .:/code
@@ -82,18 +76,6 @@ nginx:
     - home
   volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d
-
-graphite:
-  restart: "no"
-  build: ./graphite/
-  ports:
-    - "81:80"
-    - "2003:2003"
-    - "2004:2004"
-    - "2023:2023"
-    - "2024:2024"
-    - "8127:8126"
-    - "8125:8125/udp"
 
 redis:
   restart: "no"

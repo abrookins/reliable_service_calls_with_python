@@ -1,7 +1,8 @@
-# Making reliable network calls with Python
+# Simulating Network Request Reliability Patterns With Python
 
-This project demonstrates stability patterns that will make your network calls
-in Python more reliable.
+This project demonstrates stability patterns that will make network requests in
+your programs more reliable. The language used is Python, but the patterns are
+universal.
 
 The form of the demonstration is a set of backend web services against which
 various common failure modes are simulated. For example, total failure of an
@@ -11,18 +12,18 @@ The patterns demonstrated include:
 
 * **Circuit breakers**: mechanisms that stop executing code after reaching a failure threshold
 * **Timeouts**: deadlines that network requests must meet, after which the program stops waiting
-* **Retries with exponential backoff and random jitter**: attempts to try a failed network request again
+* **Retries with backoff and jitter**: attempts to try a failed network request again
 * **Graceful degradation**: falling back to a degraded state; i.e., returning partial data
 * **Generic gateway**: a collection of code that templates error handling, especially around network requests
 
-The "generic gateway" and "circuit breaker" patterns are based on Chapter 5,
+The _generic gateway_ and _circuit breaker_ patterns are based on Chapter 5,
 "Stability Patterns," of the book *Release It!* by Michael Nygard.
 
 The idea to use exponential backoff with "jitter" is based on [*Exponential
 Backoff And Jitter*](https://www.awsarchitectureblog.com/2015/03/backoff.html),
 published in the *AWS Architecture Blog*.
 
-## Introducing the demo system
+## Introducing the Demo System
 
 The simulations run for the demonstration use the "homepage" service included in
 this project. The homepage service acts as a composition layer that returns a
@@ -34,9 +35,9 @@ homepage:
 
 (What these items are is intentionally unspecified.)
 
-The service requires a token that is forwarded to an authentication system that
+The service requires an authentication token that is forwarded to a system that
 returns the user's permissions, for a total of three network requests required
-to return the response (authentication, recommendations, and popular items).
+to return the response (authorization, recommendations, and popular items).
 
 Here is an example request made of this service:
 
@@ -54,9 +55,9 @@ Here is an example request made of this service:
     {"recommendations": [12, 23, 100, 122, 220, 333, 340, 400, 555, 654], "popular_items": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
 ```
 
-As you can see, we get two lists: 'recommendations' and 'popular_items.'
+As you can see, we get two lists, `recommendations` and `popular_items`.
 
-## Method of inquiry
+## Method of Inquiry
 
 This document will proceed through a series of simulations, starting with the
 total failure of an upstream service. These simulations will show how the
@@ -65,7 +66,7 @@ providing chances to examine Python code examples.
  
 With those introductions out of the way, let's start simulating!
 
-## Simulation 1: total failure of an upstream service (recommendations), using retries
+## Simulation 1: Total Failure of an Upstream Service, Using Retries
 
 In this simulation, our homepage service is humming along, serving popularity
 and recommendations data it pulled from two upstream services, when suddenly,
@@ -88,11 +89,11 @@ The graph shows a timeline of events related to the outage:
 *Very interesting, but I have questions*, you might be thinking! Here are a few
 worth pondering:
 
-### Is this a good graph?
+### Does This Graph Show a Reliable System?
 
-Aside from the fact that an outage occurred, the graph is pretty good. While
-the recommendations outage was going on, the homepage service maintained 
-decent availability.
+I would say yes. Aside from the fact that an outage occurred, the graph is
+pretty good. While the recommendations outage was going on, the homepage
+service maintained decent availability.
 
 Without timeouts or circuit breakers, the homepage service would have been
 unavailable until the outage was over. But that's not what happened --

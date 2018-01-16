@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # encoding: utf-8
 
+
 class MockResponse:
     """A helper for mocking `request` library responses."""
     def __init__(self, json_data, status_code):

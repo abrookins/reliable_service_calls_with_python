@@ -12,8 +12,6 @@ def mock_200_responses(*args, **kwargs):
         return MockResponse([1, 2, 3], 200)
     elif args[0] == 'http://popular:8003/popular_items':
         return MockResponse([4, 5, 6], 200)
-    else:
-        return MockResponse({"error": "Resource not found"}, 404)
 
 
 class TestAuthentication(TestCase):

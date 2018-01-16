@@ -2,11 +2,11 @@
 # encoding: utf-8
 import falcon
 import json
+import redis
 import uuid
-import statsd
 
 
-c = statsd.StatsClient('graphite', 8125)
+r = redis.StrictRedis(host="redis", port=6379, db=0)
 
 
 class AuthenticationResource:
@@ -37,7 +37,7 @@ class AuthenticationResource:
         challenges = ['Token type="pudding"']
 
         if token is None:
-            c.incr('authentication.missing_auth_token')
+            r.incr('authentication.missing_auth_token')
             description = 'Please provide an auth token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',

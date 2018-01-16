@@ -3,7 +3,6 @@
 import falcon
 import logging
 import redis
-import statsd
 import time
 import sys
 
@@ -11,7 +10,6 @@ from apiclient import ApiClient
 
 
 auth_client = ApiClient('authentication')
-c = statsd.StatsClient('graphite', port=8125)
 r = redis.StrictRedis(host="redis", port=6379, db=0)
 log = logging.getLogger(__name__)
 
@@ -68,14 +66,14 @@ class PermissionsMiddleware:
         user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            c.incr('authorization.permission_denied')
+            r.incr('stats.authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        c.incr('authorization.authorization_success')
+        r.incr('stats.authorization.authorization_success')
 
         req.context['auth_header'] = auth_headers
         req.context['user_details'] = user_details
