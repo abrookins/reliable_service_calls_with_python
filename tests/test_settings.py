@@ -9,7 +9,7 @@ from falcon.testing import TestCase
 from settings import SettingsResource
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0)
+r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 
 class TestSettingsResource(TestCase):
@@ -26,7 +26,7 @@ class TestSettingsResource(TestCase):
         data = {'outages': ['recommendations']}
         resp = self.simulate_put('/settings', body=json.dumps(data))
         assert data == resp.json
-        assert r.smembers('outages') == {b'recommendations'}
+        assert r.smembers('outages') == {'recommendations'}
 
     def test_replaces_existing_settings(self):
         # Set initial settings
@@ -40,4 +40,4 @@ class TestSettingsResource(TestCase):
 
         expected = {'outages': ['recommendations']}
         assert expected == resp.json
-        assert r.smembers('outages') == {b'recommendations'}
+        assert r.smembers('outages') == {'recommendations'}

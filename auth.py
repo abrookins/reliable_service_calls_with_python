@@ -6,7 +6,7 @@ import redis
 import uuid
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0)
+r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 
 class AuthenticationResource:
@@ -37,7 +37,7 @@ class AuthenticationResource:
         challenges = ['Token type="pudding"']
 
         if token is None:
-            r.incr('authentication.missing_auth_token')
+            r.hincrby('stats', 'authentication.missing_auth_token')
             description = 'Please provide an auth token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',

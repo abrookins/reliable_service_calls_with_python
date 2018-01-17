@@ -10,7 +10,7 @@ from apiclient import ApiClient
 
 
 auth_client = ApiClient('authentication')
-r = redis.StrictRedis(host="redis", port=6379, db=0)
+r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -64,14 +64,14 @@ class PermissionsMiddleware:
         user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            r.incr('stats.authorization.permission_denied')
+            r.hincrby('stats', 'authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        r.incr('stats.authorization.authorization_success')
+        r.hincrby('stats', 'authorization.authorization_success')
 
         req.context['auth_header'] = auth_headers
         req.context['user_details'] = user_details

@@ -9,7 +9,7 @@ import redis
 
 import apiclient
 
-r = redis.StrictRedis(host="redis", port=6379, db=0)
+r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)

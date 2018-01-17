@@ -11,7 +11,7 @@ from unittest import mock
 from . import MockResponse
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0)
+r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 
 class TestFuzzingMiddleware(TestCase):
