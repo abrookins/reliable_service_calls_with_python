@@ -2,6 +2,7 @@
 # encoding: utf-8
 import logging
 import pybreaker
+import os
 import redis
 import requests
 import sys
@@ -14,19 +15,24 @@ from jittery_retry import RetryWithFullJitter
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 log = logging.getLogger(__name__)
+
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 urls = {
     'authentication': 'http://authentication:8000/authenticate',
     'recommendations': 'http://recommendations:8002/recommendations',
-    'popular': 'http://popular:8003/popular_items'
+    'popular': 'http://popular:8003/popular_items',
+    'settings': 'http://settings:8004/settings',
+    'metrics': 'http://metrics:8005/metrics',
 }
 
 circuit_breakers = {
    'authentication': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
    'recommendations': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-   'popular': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
+   'popular': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+   'settings': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+   'metrics': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
 }
 
 
@@ -49,16 +55,16 @@ class ApiClient(requests.Session):
             result = self.circuit_breaker.call(method, self.url, **kwargs)
         except ConnectionError:
             log.error('Connection error when trying {}'.format(self.url))
-            r.hincrby('stats', 'circuitbreaker.{}.connection_error'.format(self.service))
+            self._metrics('circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout when trying {}'.format(self.url))
-            r.hincrby('stats', 'circuitbreaker.{}.timeout'.format(self.service))
+            self._metrics('circuitbreaker.{}.timeout'.format(self.service))
         except pybreaker.CircuitBreakerError as e:
             log.error(e)
-            r.hincrby('stats', 'circuitbreaker.{}.breaker_open'.format(self.service))
+            self._metrics('circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: {}'.format(self.url))
-            r.hincrby('stats', 'circuitbreaker.{}.error'.format(self.service))
+            self._metrics('circuitbreaker.{}.error'.format(self.service))
 
         return result
 
@@ -76,3 +82,8 @@ class ApiClient(requests.Session):
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self.timeout
         return self._request(super().delete, self.url, **kwargs)
+
+    def _metrics(self, key):
+        if os.environ['TESTING']:
+            return
+        requests.post(urls['metrics'], key)

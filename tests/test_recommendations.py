@@ -32,5 +32,5 @@ class TestRecommendations(TestCase):
 
     def test_get_returns_expected_data(self):
         resp = self.simulate_get('/recommendations')
-        assert 200 == resp.status_code
-        assert [12, 23, 100, 122, 220, 333, 340, 400, 555, 654] == resp.json
+        assert resp.status_code == 200
+        assert resp.json == [12, 23, 100, 122, 220, 333, 340, 400, 555, 654]

@@ -5,6 +5,8 @@ tests:
     - test-redis:redis
   volumes:
     - .:/code
+  environment:
+    - TESTING=1
   command: ["py.test"]
 
 authentication:
@@ -56,12 +58,23 @@ popular:
   volumes:
     - .:/code
 
-outage:
+settings:
   restart: "no"
   build: .
   ports:
     - "8004:8004"
-  command: /usr/local/bin/gunicorn outage:api --reload --log-level debug -w 8 -b :8004
+  command: /usr/local/bin/gunicorn settings:api --reload --log-level debug -w 8 -b :8004
+  links:
+    - redis
+  volumes:
+    - .:/code
+
+metrics:
+  restart: "no"
+  build: .
+  ports:
+    - "8005:8005"
+  command: /usr/local/bin/gunicorn metrics:api --reload --log-level debug -w 8 -b :8005
   links:
     - redis
   volumes:

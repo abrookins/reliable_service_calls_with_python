@@ -15,6 +15,9 @@ log = logging.getLogger(__name__)
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
+OUTAGES_KEY = 'outages'
+
+
 class SettingsResource:
     """A resource that stores settings for the current simulation.
 
@@ -37,7 +40,6 @@ class SettingsResource:
 
     Note: 'outages' is the only supported setting for now.
     """
-    OUTAGES_KEY = 'outages'
 
     def on_put(self, req, resp):
         """Replace current simulation settings values."""
@@ -46,13 +48,13 @@ class SettingsResource:
         except (TypeError, json.JSONDecodeError):
             raise falcon.HTTPBadRequest('Bad request', 'Request body was not valid JSON')
 
-        if self.OUTAGES_KEY not in settings:
+        if OUTAGES_KEY not in settings:
             raise falcon.HTTPBadRequest('Bad request', 'Valid settings are: "outages"')
 
-        r.delete(self.OUTAGES_KEY)
+        r.delete(OUTAGES_KEY)
 
         for path in settings['outages']:
-            r.sadd(self.OUTAGES_KEY, path)
+            r.sadd(OUTAGES_KEY, path)
 
         resp.body = json.dumps(settings)
 

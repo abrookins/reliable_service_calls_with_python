@@ -13,7 +13,7 @@ class TestAuthentication(TestCase):
 
     def test_token_is_required(self):
         resp = self.simulate_post('/authenticate')
-        assert 401 == resp.status_code
+        assert resp.status_code == 401
 
     @mock.patch('uuid.uuid4')
     def test_post_returns_user_details_with_valid_token(self, mock_uuid4):
@@ -24,5 +24,5 @@ class TestAuthentication(TestCase):
             'uuid': '1234',
             'permissions': ['can_view_recommendations', 'can_view_homepage']
         }
-        assert 200 == resp.status_code
+        assert resp.status_code == 200
         assert expected_data == resp.json

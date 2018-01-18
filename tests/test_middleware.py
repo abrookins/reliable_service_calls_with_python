@@ -66,28 +66,28 @@ class TestPermissionMiddleware(TestCase):
     def test_requires_auth_token(self):
         resp = self.simulate_get('/')
         expected_status_code = 401
-        assert expected_status_code == resp.status_code
+        assert resp.status_code == expected_status_code
 
     @mock.patch('requests.Session.post', side_effect=mock_timeout_response)
     def test_auth_request_failed(self, mock_post):
         resp = self.simulate_get('/', headers={'Authorization': '1234'})
         expected_status_code = 500
-        assert expected_status_code == resp.status_code
+        assert resp.status_code == expected_status_code
 
     @mock.patch('requests.Session.post', side_effect=mock_401_response)
     def test_auth_returned_401(self, mock_post):
         resp = self.simulate_get('/', headers={'Authorization': '1234'})
         expected_status_code = 401
-        assert expected_status_code == resp.status_code
+        assert resp.status_code == expected_status_code 
 
     @mock.patch('requests.Session.post', side_effect=mock_missing_permission_response)
     def test_missing_required_permission(self, mock_post):
         resp = self.simulate_get('/', headers={'Authorization': '1234'})
         expected_status_code = 403
-        assert expected_status_code == resp.status_code
+        assert resp.status_code == expected_status_code
 
     @mock.patch('requests.Session.post', side_effect=mock_correct_permission_response)
     def test_has_correct_permission(self, mock_post):
         resp = self.simulate_get('/', headers={'Authorization': '1234'})
         expected_status_code = 200
-        assert expected_status_code == resp.status_code
+        assert resp.status_code == expected_status_code

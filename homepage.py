@@ -11,6 +11,7 @@ from apiclient import ApiClient
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
+metrics = ApiClient('metrics')
 
 
 class HomepageResource:
@@ -47,7 +48,8 @@ class HomepageResource:
             'popular_items': popular_items
         })
 
-        r.hincrby('stats', 'homepage.get')
+        metrics.post('homepage.get')
+
 
 
 api = falcon.API(middleware=[
