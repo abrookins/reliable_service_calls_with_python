@@ -42,7 +42,7 @@ to return the response (authorization, recommendations, and popular items).
 Here is an example request made of this service:
 
 ```
-    $ curl -v -H "Authorization: Token 0x132" "http://192.168.99.100:8001/home"
+    $ curl -v -H "Authorization: Token 0x132" "http://192.168.99.100:8001/"
 
     < HTTP/1.1 200 OK
     < Server: gunicorn/19.6.0
