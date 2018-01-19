@@ -8,21 +8,22 @@ if [ "$1" = '--initialize' ]; then
 fi
 
 IP=`docker-machine ip`
-AUTH="-H 'Authorization: Token 0x132'"
 
 
 # Simulation: Failure of an upstream service without circuit breakers, timeouts, or retries.
 #   - 0 requests served during outage
 
-curl $AUTH -H "CONTENT-TYPE: application/json" \
+curl -X PUT -H "Authorization: Token 0x132" -H "CONTENT-TYPE: application/json" \
     -d '{
         "circuit_breakers": false,
         "timeouts": false,
-        "retries": false
-      }
-    }' "$IP/settings" | python -m json.tool
+        "retries": false,
+        "outages": ["/recommendations"]
+      }' "$IP/settings"
 
-curl $AUTH "$IP/home" | python -m json.tool
+echo
+
+curl -H "Authorization: Token 0x132" "$IP/"
 
 # Simulation: Failure of an upstream service without circuit breakers, timeouts, or fallback data, but with retries
 #   - 0 requests served during outage, more errors

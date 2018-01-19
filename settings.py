@@ -5,17 +5,25 @@ import logging
 import sys
 
 import falcon
-import redis
-
 import apiclient
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+from util import redis_client
+
+
 log = logging.getLogger(__name__)
+redis = redis_client()
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
+SETTINGS_KEY = 'settings'
 OUTAGES_KEY = 'outages'
+VALID_SETTINGS = {
+    OUTAGES_KEY,
+    'cirbuit_breakers',
+    'timeouts',
+    'retries'
+}
 
 
 class SettingsResource:
@@ -48,13 +56,24 @@ class SettingsResource:
         except (TypeError, json.JSONDecodeError):
             raise falcon.HTTPBadRequest('Bad request', 'Request body was not valid JSON')
 
-        if OUTAGES_KEY not in settings:
-            raise falcon.HTTPBadRequest('Bad request', 'Valid settings are: "outages"')
+        if not VALID_SETTINGS & set(settings.keys()):
+            raise falcon.HTTPBadRequest(
+                    'Bad request',
+                    'Valid settings are: {}'.format(VALID_SETTINGS.join(', ')))
 
-        r.delete(OUTAGES_KEY)
+        if OUTAGES_KEY in settings:
+            redis.delete(OUTAGES_KEY)
+            for path in settings[OUTAGES_KEY]:
+                redis.sadd(OUTAGES_KEY, path)
+        else:
+            redis.delete(OUTAGES_KEY)
 
-        for path in settings['outages']:
-            r.sadd(OUTAGES_KEY, path)
+        settings_hash = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
+
+        if settings_hash:
+            redis.hmset(SETTINGS_KEY, settings_hash)
+        else:
+            redis.delete(SETTINGS_KEY)
 
         resp.body = json.dumps(settings)
 

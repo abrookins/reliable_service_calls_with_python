@@ -85,6 +85,7 @@ nginx:
     - "80:80"
   links:
     - home
+    - settings
   volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d
 

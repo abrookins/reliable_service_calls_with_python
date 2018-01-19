@@ -1,4 +1,4 @@
-# Simulating Network Request Reliability Patterns With Python
+# Simulating Outages to Demonstrate Patterns for Reliable Networked Service Calls
 
 This project demonstrates stability patterns that will make network requests in
 your programs more reliable. The language used is Python, but the patterns are

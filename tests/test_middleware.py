@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from unittest import mock
+
 import apiclient
 import falcon
-import redis
 
 from falcon.testing import TestCase, SimpleTestResource
 from middleware import FuzzingMiddleware, PermissionsMiddleware
 from requests.exceptions import Timeout
-from unittest import mock
+from util import redis_client
 from . import MockResponse
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+redis = redis_client()
 
 
 class TestFuzzingMiddleware(TestCase):
@@ -22,7 +23,7 @@ class TestFuzzingMiddleware(TestCase):
         ])
         self.url = '/recommendations'
         self.api.add_route(self.url, SimpleTestResource())
-        r.flushdb()
+        redis.flushdb()
 
     @mock.patch('time.sleep')
     def test_when_outage_value_does_not_exist(self, mock_sleep):
@@ -31,7 +32,7 @@ class TestFuzzingMiddleware(TestCase):
 
     @mock.patch('time.sleep')
     def test_when_outage_value_is_true(self, mock_sleep):
-        r.sadd('outages', '/recommendations')
+        redis.sadd('outages', '/recommendations')
         self.simulate_get(self.url)
         assert mock_sleep.called
 

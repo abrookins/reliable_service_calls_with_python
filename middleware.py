@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import falcon
 import logging
-import redis
 import time
 import sys
+
+import falcon
 
 from apiclient import ApiClient
 from settings import OUTAGES_KEY
 from signals import metric
+from util import redis_client
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+redis = redis_client()
 auth_client = ApiClient('authentication')
 log = logging.getLogger(__name__)
 
@@ -26,9 +27,9 @@ class FuzzingMiddleware:
     clients use.
     """
     def process_request(self, req, resp):
-        outage = r.sismember(OUTAGES_KEY, req.path)
+        outage = redis.sismember(OUTAGES_KEY, req.path)
         if outage:
-            log.info('Delaying response time: {}'.format(req.path))
+            log.info('Delaying response time: %s', req.path)
             time.sleep(5)
 
 

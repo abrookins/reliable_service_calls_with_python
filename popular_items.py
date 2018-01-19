@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 # encoding: utf-8
-
-import falcon
 import json
 import redis
 
-from apiclient import ApiClient
+import falcon
+
 from middleware import FuzzingMiddleware
 from signals import metric
-
-
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 
 
 class PopularItemsResource:

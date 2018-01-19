@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import falcon
 import json
-import redis
+
+import falcon
 
 from apiclient import ApiClient
 from middleware import PermissionsMiddleware
 from signals import metric
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
 
@@ -55,4 +54,4 @@ class HomepageResource:
 api = falcon.API(middleware=[
     PermissionsMiddleware('can_view_homepage')
 ])
-api.add_route('/home', HomepageResource())
+api.add_route('/', HomepageResource())

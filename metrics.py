@@ -7,11 +7,11 @@ import sys
 import time
 
 import falcon
-import pytz
-import redis
+
+from util import redis_client
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
+redis = redis_client()
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -46,21 +46,21 @@ class MetricsResource:
     def on_get(self, req, resp):
         """Return all metrics."""
         metrics = [(key, self._iso_timestamp(score))
-                   for key, score in r.zrange('metrics', 0, -1, withscores=True)]
+                   for key, score in redis.zrange('metrics', 0, -1, withscores=True)]
         resp.body = json.dumps({'metrics': metrics})
 
     def on_post(self, req, resp):
         """Create a metric.
-        
+
         Metrics are stored in Redis as a sorted set of (timestamp, key) pairs.
         """
         key = req.stream.read()
-        r.zadd('metrics', time.time(), key)
+        redis.zadd('metrics', time.time(), key)
         resp.status = falcon.HTTP_201
 
     def on_delete(self, req, resp):
         """Delete all current metrics."""
-        r.delete('metrics')
+        redis.delete('metrics')
 
 
 api = falcon.API()

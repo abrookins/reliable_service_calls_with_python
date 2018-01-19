@@ -1,16 +1,15 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import falcon
 import json
 import logging
-import redis
 import sys
+
+import falcon
 
 from signals import metric
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
 
-r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
