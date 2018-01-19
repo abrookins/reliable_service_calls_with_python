@@ -10,12 +10,19 @@ fi
 IP=`docker-machine ip`
 AUTH="-H 'Authorization: Token 0x132'"
 
-curl $AUTH "$IP/home" | python -m json.tool
 
-# Simulation: Failure of an upstream service without circuit breakers, timeouts, or fallback data
+# Simulation: Failure of an upstream service without circuit breakers, timeouts, or retries.
 #   - 0 requests served during outage
 
-curl $AUTH "$IP/settings" | python -m json.tool
+curl $AUTH -H "CONTENT-TYPE: application/json" \
+    -d '{
+        "circuit_breakers": false,
+        "timeouts": false,
+        "retries": false
+      }
+    }' "$IP/settings" | python -m json.tool
+
+curl $AUTH "$IP/home" | python -m json.tool
 
 # Simulation: Failure of an upstream service without circuit breakers, timeouts, or fallback data, but with retries
 #   - 0 requests served during outage, more errors

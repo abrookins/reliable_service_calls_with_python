@@ -11,6 +11,7 @@ from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
 from jittery_retry import RetryWithFullJitter
+from signals import metric
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
@@ -55,16 +56,16 @@ class ApiClient(requests.Session):
             result = self.circuit_breaker.call(method, self.url, **kwargs)
         except ConnectionError:
             log.error('Connection error when trying {}'.format(self.url))
-            self._metrics('circuitbreaker.{}.connection_error'.format(self.service))
+            metric.send('circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout when trying {}'.format(self.url))
-            self._metrics('circuitbreaker.{}.timeout'.format(self.service))
+            metric.send('circuitbreaker.{}.timeout'.format(self.service))
         except pybreaker.CircuitBreakerError as e:
             log.error(e)
-            self._metrics('circuitbreaker.{}.breaker_open'.format(self.service))
+            metric.send('circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: {}'.format(self.url))
-            self._metrics('circuitbreaker.{}.error'.format(self.service))
+            metric.send('circuitbreaker.{}.error'.format(self.service))
 
         return result
 
@@ -82,8 +83,3 @@ class ApiClient(requests.Session):
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self.timeout
         return self._request(super().delete, self.url, **kwargs)
-
-    def _metrics(self, key):
-        if os.environ['TESTING']:
-            return
-        requests.post(urls['metrics'], key)

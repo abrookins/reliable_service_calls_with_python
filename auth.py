@@ -5,11 +5,10 @@ import json
 import redis
 import uuid
 
-from apiclient import ApiClient
+from signals import metric
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
-metrics = ApiClient('metrics')
 
 
 class AuthenticationResource:
@@ -40,7 +39,7 @@ class AuthenticationResource:
         challenges = ['Token type="pudding"']
 
         if token is None:
-            metrics.post('authentication.missing_auth_token')
+            metric.send('authentication.missing_auth_token')
             description = 'Please provide an auth token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',

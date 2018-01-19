@@ -4,14 +4,14 @@ import falcon
 import json
 import redis
 
-from middleware import PermissionsMiddleware
 from apiclient import ApiClient
+from middleware import PermissionsMiddleware
+from signals import metric
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 recommended = ApiClient('recommendations')
 popular = ApiClient('popular')
-metrics = ApiClient('metrics')
 
 
 class HomepageResource:
@@ -48,7 +48,7 @@ class HomepageResource:
             'popular_items': popular_items
         })
 
-        metrics.post('homepage.get')
+        metric.send('homepage.get')
 
 
 

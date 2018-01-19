@@ -6,6 +6,7 @@ redis==2.10.5
 requests==2.11.0
 six==1.10.0
 pytz==2017.3
+blinker==1.4
 
 # Testing
 pytest==3.0.2

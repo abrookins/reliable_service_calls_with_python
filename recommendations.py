@@ -6,13 +6,11 @@ import logging
 import redis
 import sys
 
-from apiclient import ApiClient
-from metrics_client import MetricsClient
+from signals import metric
 from middleware import PermissionsMiddleware, FuzzingMiddleware
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
-metrics = MetricsClient()
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -47,7 +45,8 @@ class RecommendationsResource:
 
     def on_get(self, req, resp):
         """Return recommendations for a user."""
-        metrics.post('recommendations.get')
+        metric.send('recommendations.get')
+
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))
 

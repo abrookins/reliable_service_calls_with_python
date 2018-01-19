@@ -5,8 +5,6 @@ tests:
     - test-redis:redis
   volumes:
     - .:/code
-  environment:
-    - TESTING=1
   command: ["py.test"]
 
 authentication:

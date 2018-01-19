@@ -8,11 +8,11 @@ import sys
 
 from apiclient import ApiClient
 from settings import OUTAGES_KEY
+from signals import metric
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
 auth_client = ApiClient('authentication')
-metrics = ApiClient('metrics')
 log = logging.getLogger(__name__)
 
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
@@ -66,14 +66,14 @@ class PermissionsMiddleware:
         user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            metrics.post('authorization.permission_denied')
+            metric.send('authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        metrics.post('authorization.authorization_success')
+        metric.send('authorization.authorization_success')
 
 
         req.context['auth_header'] = auth_headers

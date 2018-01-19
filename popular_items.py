@@ -7,10 +7,10 @@ import redis
 
 from apiclient import ApiClient
 from middleware import FuzzingMiddleware
+from signals import metric
 
 
 r = redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)
-metrics = ApiClient('metrics')
 
 
 class PopularItemsResource:
@@ -34,7 +34,7 @@ class PopularItemsResource:
     """
     def on_get(self, req, resp):
         """Return yesterday's most popular items."""
-        metrics.post('popular_items.get')
+        metric.send('popular_items.get')
         most_popular_yesterday = [1, 2, 3, 4, 5, 6, 7, 8 , 9, 10]
         resp.body = json.dumps(most_popular_yesterday)
 
