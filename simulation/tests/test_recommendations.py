@@ -5,7 +5,7 @@ import uuid
 import falcon
 from falcon.testing import TestCase
 
-from recommendations import RecommendationsResource
+from simulation.recommendations import RecommendationsResource
 
 
 class MockPermissionsMiddleware:

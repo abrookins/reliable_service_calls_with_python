@@ -3,8 +3,8 @@
 from unittest import TestCase, mock, skip
 from requests.exceptions import ConnectionError, Timeout
 
-import apiclient
-from jittery_retry import RetryWithFullJitter
+from simulation import apiclient
+from simulation.jittery_retry import RetryWithFullJitter
 from . import MockResponse
 
 
@@ -88,12 +88,12 @@ class TestApiClient(TestCase):
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_default_timeout(self, mock_post):
         apiclient.ApiClient('recommendations').post()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=1)
+        mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None, timeout=1)
 
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_provided_timeout(self, mock_post):
         apiclient.ApiClient('recommendations', timeout=5).post()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
+        mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None, timeout=5)
 
     @mock.patch('requests.Session.delete', side_effect=mock_200_response)
     def test_delete_uses_default_timeout(self, mock_post):

@@ -4,7 +4,7 @@ import json
 import uuid
 import falcon
 
-from signals import metric
+from .signals import publish_metric
 
 
 class AuthenticationResource:
@@ -35,7 +35,7 @@ class AuthenticationResource:
         challenges = ['Token type="pudding"']
 
         if token is None:
-            metric.send('authentication.missing_auth_token')
+            publish_metric.send('authentication.missing_auth_token')
             description = 'Please provide an auth token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',

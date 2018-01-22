@@ -4,9 +4,9 @@ import json
 
 import falcon
 
-from apiclient import ApiClient
-from middleware import PermissionsMiddleware
-from signals import metric
+from .apiclient import ApiClient
+from .middleware import PermissionsMiddleware
+from .signals import publish_metric
 
 
 recommended = ApiClient('recommendations')
@@ -47,7 +47,7 @@ class HomepageResource:
             'popular_items': popular_items
         })
 
-        metric.send('homepage.get')
+        publish_metric.send('homepage.get')
 
 
 

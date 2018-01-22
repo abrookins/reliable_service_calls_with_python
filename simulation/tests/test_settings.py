@@ -5,8 +5,8 @@ from unittest import mock
 import json
 from falcon.testing import TestCase
 
-from settings import SettingsResource
-from util import redis_client
+from simulation.settings import SettingsResource
+from simulation.util import redis_client
 
 
 redis = redis_client()

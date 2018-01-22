@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import json
-import redis
 
 import falcon
 
-from middleware import FuzzingMiddleware
-from signals import metric
+from .middleware import FuzzingMiddleware
+from .signals import publish_metric
 
 
 class PopularItemsResource:
@@ -30,7 +29,7 @@ class PopularItemsResource:
     """
     def on_get(self, req, resp):
         """Return yesterday's most popular items."""
-        metric.send('popular_items.get')
+        publish_metric.send('popular_items.get')
         most_popular_yesterday = [1, 2, 3, 4, 5, 6, 7, 8 , 9, 10]
         resp.body = json.dumps(most_popular_yesterday)
 

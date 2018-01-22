@@ -3,7 +3,7 @@
 from unittest import mock
 from falcon.testing import TestCase
 
-from homepage import HomepageResource
+from simulation.homepage import HomepageResource
 from . import MockResponse
 
 

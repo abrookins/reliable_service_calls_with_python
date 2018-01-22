@@ -2,7 +2,7 @@
 # encoding: utf-8
 from falcon.testing import TestCase
 
-from popular_items import PopularItemsResource
+from simulation.popular_items import PopularItemsResource
 
 
 class TestPopularItems(TestCase):

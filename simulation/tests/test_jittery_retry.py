@@ -4,7 +4,7 @@ from unittest import TestCase
 
 from requests.packages.urllib3.exceptions import ProtocolError
 
-from jittery_retry import RetryWithFullJitter
+from simulation.jittery_retry import RetryWithFullJitter
 
 
 class TestRetryWithFullJitter(TestCase):

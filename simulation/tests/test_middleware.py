@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
 from unittest import mock
-
-import apiclient
 import falcon
 
 from falcon.testing import TestCase, SimpleTestResource
-from middleware import FuzzingMiddleware, PermissionsMiddleware
 from requests.exceptions import Timeout
-from util import redis_client
+
+from simulation import apiclient
+from simulation.middleware import FuzzingMiddleware, PermissionsMiddleware
+from simulation.util import redis_client
 from . import MockResponse
 
 

@@ -6,17 +6,15 @@ import sys
 
 import falcon
 
-from apiclient import ApiClient
-from settings import OUTAGES_KEY
-from signals import metric
-from util import redis_client
+from .apiclient import ApiClient
+from .settings import OUTAGES_KEY
+from .signals import publish_metric
+from .util import redis_client
 
 
 redis = redis_client()
 auth_client = ApiClient('authentication')
 log = logging.getLogger(__name__)
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class FuzzingMiddleware:
@@ -67,14 +65,14 @@ class PermissionsMiddleware:
         user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            metric.send('authorization.permission_denied')
+            publish_metric.send('authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        metric.send('authorization.authorization_success')
+        publish_metric.send('authorization.authorization_success')
 
 
         req.context['auth_header'] = auth_headers

@@ -5,15 +5,12 @@ import logging
 import sys
 
 import falcon
-import apiclient
 
-from util import redis_client
+from .util import redis_client
 
 
 log = logging.getLogger(__name__)
 redis = redis_client()
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 SETTINGS_KEY = 'settings'
@@ -58,8 +55,8 @@ class SettingsResource:
 
         if not VALID_SETTINGS & set(settings.keys()):
             raise falcon.HTTPBadRequest(
-                    'Bad request',
-                    'Valid settings are: {}'.format(VALID_SETTINGS.join(', ')))
+                'Bad request',
+                'Valid settings are: {}'.format(', '.join(VALID_SETTINGS)))
 
         if OUTAGES_KEY in settings:
             redis.delete(OUTAGES_KEY)

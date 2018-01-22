@@ -3,7 +3,7 @@
 from unittest import mock
 from falcon.testing import TestCase
 
-from auth import AuthenticationResource
+from simulation.auth import AuthenticationResource
 
 
 class TestAuthentication(TestCase):

@@ -6,13 +6,11 @@ import sys
 
 import falcon
 
-from signals import metric
-from middleware import PermissionsMiddleware, FuzzingMiddleware
+from .signals import publish_metric
+from .middleware import PermissionsMiddleware, FuzzingMiddleware
 
 
 log = logging.getLogger(__name__)
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 class RecommendationsResource:
@@ -44,7 +42,7 @@ class RecommendationsResource:
 
     def on_get(self, req, resp):
         """Return recommendations for a user."""
-        metric.send('recommendations.get')
+        publish_metric.send('recommendations.get')
 
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))

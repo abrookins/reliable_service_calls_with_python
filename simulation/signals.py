@@ -3,4 +3,4 @@
 from blinker import signal
 
 
-metric = signal('metric')
+publish_metric = signal('metric')

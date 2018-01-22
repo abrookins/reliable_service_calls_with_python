@@ -12,7 +12,7 @@ authentication:
   build: .
   ports:
     - "8000:8000"
-  command: /usr/local/bin/gunicorn auth:api --reload --log-level debug -w 8 -b :8000
+  command: /usr/local/bin/gunicorn simulation.auth:api --reload --log-level debug -w 8 -b :8000
   links:
     - redis
   volumes:
@@ -23,12 +23,13 @@ home:
   build: .
   ports:
     - "8001:8001"
-  command: /usr/local/bin/gunicorn homepage:api --reload --log-level debug -w 8 -b :8001
+  command: /usr/local/bin/gunicorn simulation.homepage:api --reload --log-level debug -w 8 -b :8001
   links:
     - authentication
     - recommendations
     - popular
     - redis
+    - metrics
   volumes:
     - .:/code
 
@@ -37,9 +38,10 @@ recommendations:
   build: .
   ports:
     - "8002:8002"
-  command: /usr/local/bin/gunicorn recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
+  command: /usr/local/bin/gunicorn simulation.recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
   links:
     - authentication
+    - metrics
     - redis
   volumes:
     - .:/code
@@ -49,10 +51,11 @@ popular:
   build: .
   ports:
     - "8003:8003"
-  command: /usr/local/bin/gunicorn popular_items:api --reload --log-level debug -w 8 -b :8003
+  command: /usr/local/bin/gunicorn simulation.popular_items:api --reload --log-level debug -w 8 -b :8003
   links:
     - authentication
     - redis
+    - metrics
   volumes:
     - .:/code
 
@@ -61,9 +64,10 @@ settings:
   build: .
   ports:
     - "8004:8004"
-  command: /usr/local/bin/gunicorn settings:api --reload --log-level debug -w 8 -b :8004
+  command: /usr/local/bin/gunicorn simulation.settings:api --reload --log-level debug -w 8 -b :8004
   links:
     - redis
+    - metrics
   volumes:
     - .:/code
 
@@ -72,7 +76,7 @@ metrics:
   build: .
   ports:
     - "8005:8005"
-  command: /usr/local/bin/gunicorn metrics:api --reload --log-level debug -w 8 -b :8005
+  command: /usr/local/bin/gunicorn simulation.metrics:api --reload --log-level debug -w 8 -b :8005
   links:
     - redis
   volumes:
@@ -86,6 +90,7 @@ nginx:
   links:
     - home
     - settings
+    - metrics
   volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d
 

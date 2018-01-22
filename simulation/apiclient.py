@@ -9,13 +9,11 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
-from jittery_retry import RetryWithFullJitter
-from signals import metric
+from .jittery_retry import RetryWithFullJitter
+from .signals import publish_metric
 
 
 log = logging.getLogger(__name__)
-
-logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
 
 
 urls = {
@@ -51,26 +49,26 @@ class ApiClient(requests.Session):
         result = None
 
         try:
-            result = self.circuit_breaker.call(method, self.url, **kwargs)
+            result = self.circuit_breaker.call(method, *args, **kwargs)
         except ConnectionError:
             log.error('Connection error connecting to %s', self.url)
-            metric.send('circuitbreaker.{}.connection_error'.format(self.service))
+            publish_metric.send('circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout connecting to %s', self.url)
-            metric.send('circuitbreaker.{}.timeout'.format(self.service))
+            publish_metric.send('circuitbreaker.{}.timeout'.format(self.service))
         except pybreaker.CircuitBreakerError as e:
             log.error('Circuit breaker error: %s', e)
-            metric.send('circuitbreaker.{}.breaker_open'.format(self.service))
+            publish_metric.send('circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: %s', self.url)
-            metric.send('circuitbreaker.{}.error'.format(self.service))
+            publish_metric.send('circuitbreaker.{}.error'.format(self.service))
 
         return result
 
     def get(self, **kwargs):
         if 'timeout' not in kwargs:
             kwargs['timeout'] = self.timeout
-        return self._request(super().get, **kwargs)
+        return self._request(super().get, self.url, **kwargs)
 
     def post(self, data=None, json=None, **kwargs):
         if 'timeout' not in kwargs:
