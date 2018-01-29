@@ -6,7 +6,8 @@ import json
 from falcon.testing import TestCase
 
 from simulation.settings import SettingsResource
-from simulation.util import redis_client
+from simulation.redis_helpers import redis_client
+from simulation.default_settings import DEFAULT_SETTINGS
 
 
 redis = redis_client()
@@ -43,17 +44,23 @@ class TestSettingsResource(TestCase):
         assert redis.smembers('outages') == {'recommendations'}
 
     def test_false_field(self):
+        expected_settings = DEFAULT_SETTINGS.copy()
+        expected_settings['timeouts'] = False
+
         data = {'timeouts': False}
         self.simulate_put('/settings', body=json.dumps(data))
         assert redis.hmget('settings', 'timeouts') == ['False']
 
         resp = self.simulate_get('/settings')
-        assert resp.json == data
+        assert resp.json == expected_settings
 
     def test_true_field(self):
+        expected_settings = DEFAULT_SETTINGS.copy()
+        expected_settings['timeouts'] = True
+
         data = {'timeouts': True}
         self.simulate_put('/settings', body=json.dumps(data))
         assert redis.hmget('settings', 'timeouts') == ['True']
 
         resp = self.simulate_get('/settings')
-        assert resp.json == data
+        assert resp.json == expected_settings

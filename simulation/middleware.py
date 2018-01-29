@@ -6,14 +6,16 @@ import sys
 
 import falcon
 
-from .apiclient import ApiClient
+from .api_client import ApiClient
 from .settings import OUTAGES_KEY
 from .signals import publish_metric
-from .util import redis_client
+from .redis_helpers import redis_client
+from .settings_helpers import get_client_settings
 
 
 redis = redis_client()
-auth_client = ApiClient('authentication')
+settings = get_client_settings()
+auth_client = ApiClient('authentication', settings)
 log = logging.getLogger(__name__)
 
 

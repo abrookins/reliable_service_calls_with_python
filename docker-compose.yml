@@ -5,7 +5,7 @@ tests:
     - test-redis:redis
   volumes:
     - .:/code
-  command: ["py.test"]
+  command: ["py.test", "--ignore=env"]
 
 authentication:
   restart: "no"

@@ -14,12 +14,12 @@ def mock_200_responses(*args, **kwargs):
         return MockResponse([4, 5, 6], 200)
 
 
-class TestAuthentication(TestCase):
+class TestHomepage(TestCase):
     def setUp(self):
         super().setUp()
         self.api.add_route('/home', HomepageResource())
 
-    @mock.patch('requests.Session.post', side_effect=mock_200_responses)
+    @mock.patch('requests.Session.get', side_effect=mock_200_responses)
     def test_get_returns_expected_data(self, mock_post):
         resp = self.simulate_get('/home')
         expected_data = {

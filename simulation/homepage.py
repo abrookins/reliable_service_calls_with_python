@@ -4,13 +4,15 @@ import json
 
 import falcon
 
-from .apiclient import ApiClient
+from .api_client import ApiClient
 from .middleware import PermissionsMiddleware
 from .signals import publish_metric
+from .settings_helpers import get_client_settings
 
 
-recommended = ApiClient('recommendations')
-popular = ApiClient('popular')
+settings = get_client_settings()
+recommended = ApiClient('recommendations', settings)
+popular = ApiClient('popular', settings)
 
 
 class HomepageResource:

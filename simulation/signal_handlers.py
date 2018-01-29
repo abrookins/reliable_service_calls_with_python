@@ -1,13 +1,16 @@
 #!/usr/bin/env python
 # encoding: utf-8
 from .signals import publish_metric
-from .apiclient import ApiClient
-
-
-metrics = ApiClient('metrics')
+from .api_client import ApiClient
+from .settings_helpers import get_client_settings
 
 import logging
+
 log = logging.getLogger(__name__)
+
+settings = get_client_settings()
+metrics = ApiClient('metrics', settings)
+
 
 @publish_metric.connect
 def metric_subscriber(key):

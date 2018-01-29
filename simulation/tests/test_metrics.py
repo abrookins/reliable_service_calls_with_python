@@ -4,7 +4,7 @@ from unittest import mock
 from falcon.testing import TestCase
 
 from simulation.metrics import MetricsResource
-from simulation.util import redis_client
+from simulation.redis_helpers import redis_client
 
 
 redis = redis_client()

@@ -2,25 +2,26 @@
 # encoding: utf-8
 import json
 import logging
-import sys
 
 import falcon
 
-from .util import redis_client, from_redis_value
-
-
-log = logging.getLogger(__name__)
-redis = redis_client()
-
+from .redis_helpers import redis_client, from_redis_hash
+from .settings_helpers import DEFAULT_SETTINGS
 
 SETTINGS_KEY = 'settings'
+
 OUTAGES_KEY = 'outages'
+
 VALID_SETTINGS = {
     OUTAGES_KEY,
-    'cirbuit_breakers',
+    'circuit_breakers',
     'timeouts',
     'retries'
 }
+
+log = logging.getLogger(__name__)
+
+redis = redis_client()
 
 
 class SettingsResource:
@@ -46,11 +47,12 @@ class SettingsResource:
 
     Note: 'outages' is the only supported setting for now.
     """
+
     def on_get(self, req, resp):
         """Return the current simulation settings."""
-        settings = redis.hgetall(SETTINGS_KEY) or {}
-        resp.body = json.dumps({k: from_redis_value(v)
-                                for k, v in settings.items()})
+        settings = DEFAULT_SETTINGS.copy()
+        settings.update(from_redis_hash(redis.hgetall(SETTINGS_KEY) or {}))
+        resp.body = json.dumps(settings)
 
     def on_put(self, req, resp):
         """Replace current simulation settings values."""
@@ -58,8 +60,8 @@ class SettingsResource:
             settings = json.loads(req.stream.read()) or {}
         except (TypeError, json.JSONDecodeError):
             raise falcon.HTTPBadRequest(
-                    'Bad request',
-                    'Request body was not valid JSON')
+                'Bad request',
+                'Request body was not valid JSON')
 
         if not VALID_SETTINGS & set(settings.keys()):
             raise falcon.HTTPBadRequest(

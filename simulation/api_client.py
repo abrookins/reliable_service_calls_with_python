@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import sys
-
 import logging
 import pybreaker
 import requests
@@ -9,16 +7,13 @@ import requests
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
+from .default_settings import DEFAULT_SETTINGS
 from .jittery_retry import RetryWithFullJitter
 from .signals import publish_metric
-from .util import redis_client, from_redis_hash
-
-
-SETTINGS_KEY = 'settings'
+from .redis_helpers import redis_client
 
 log = logging.getLogger(__name__)
 redis = redis_client()
-
 
 urls = {
     'authentication': 'http://authentication:8000/authenticate',
@@ -29,30 +24,31 @@ urls = {
 }
 
 circuit_breakers = {
-   'authentication': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-   'recommendations': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-   'popular': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-   'settings': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-   'metrics': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
+    'authentication': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+    'recommendations': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+    'popular': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+    'settings': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
+    'metrics': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
 }
 
 
 class ApiClient(requests.Session):
-    def __init__(self, service, timeout=1, max_retries=None):
+    def __init__(self, service, settings=None, timeout=1, max_retries=None):
         super().__init__()
+        self.settings = settings if settings else DEFAULT_SETTINGS.copy()
         self.service = service
         self.circuit_breaker = circuit_breakers[service]
         self.url = urls[service]
         self.timeout = timeout
 
-        if max_retries:
-            adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
-            self.mount(self.url, adapter)
+        if self.settings['retries']:
+            if max_retries:
+                adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
+                self.mount(self.url, adapter)
 
     def _request(self, method, *args, **kwargs):
-        settings = from_redis_hash(redis.hgetall(SETTINGS_KEY))
-        use_timeouts = settings.get('timeouts')
-        use_circuit_breakers = settings.get('circuit_breakers')
+        use_timeouts = self.settings['timeouts']
+        use_circuit_breakers = self.settings['circuit_breakers']
 
         if use_timeouts:
             kwargs['timeout'] = kwargs.get('timeout') or self.timeout

@@ -6,9 +6,9 @@ import falcon
 from falcon.testing import TestCase, SimpleTestResource
 from requests.exceptions import Timeout
 
-from simulation import apiclient
+from simulation import api_client
 from simulation.middleware import FuzzingMiddleware, PermissionsMiddleware
-from simulation.util import redis_client
+from simulation.redis_helpers import redis_client
 from . import MockResponse
 
 
@@ -62,7 +62,7 @@ class TestPermissionMiddleware(TestCase):
         self.api.add_route('/', SimpleTestResource())
 
     def tearDown(self):
-        apiclient.circuit_breakers['authentication'].close()
+        api_client.circuit_breakers['authentication'].close()
 
     def test_requires_auth_token(self):
         resp = self.simulate_get('/')

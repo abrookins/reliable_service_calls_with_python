@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from requests import Timeout
 
 
 def mock_200_response(*args, **kwargs):

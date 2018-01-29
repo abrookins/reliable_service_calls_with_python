@@ -9,7 +9,7 @@ import uuid
 
 import falcon
 
-from .util import redis_client
+from .redis_helpers import redis_client
 
 
 METRICS_KEY = 'metrics'
