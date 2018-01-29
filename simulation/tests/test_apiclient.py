@@ -1,32 +1,30 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from unittest import TestCase, mock, skip
+from unittest import mock, skip
 from requests.exceptions import ConnectionError, Timeout
+from falcon.testing import TestCase
 
 from simulation import apiclient
 from simulation.jittery_retry import RetryWithFullJitter
-from . import MockResponse
+from simulation.settings import SettingsResource
+from simulation.util import redis_client
+from . import (
+    mock_200_response,
+    mock_connection_error,
+    mock_runtime_error,
+    mock_timeout
+)
 
 
-def mock_200_response(*args, **kwargs):
-    return MockResponse([1, 2, 3], 200)
-
-
-def mock_connection_error(*args, **kwargs):
-    raise ConnectionError()
-
-
-def mock_timeout(*args, **kwargs):
-    raise Timeout()
-
-
-def mock_runtime_error(*args, **kwargs):
-    raise RuntimeError()
+redis = redis_client()
 
 
 class TestApiClient(TestCase):
     def setUp(self):
+        super().setUp()
         self.client = apiclient.ApiClient('recommendations')
+        self.api.add_route('/settings', SettingsResource())
+        redis.flushdb()
 
     def tearDown(self):
         self.client.circuit_breaker.close()
@@ -104,3 +102,9 @@ class TestApiClient(TestCase):
     def test_delete_uses_provided_timeout(self, mock_post):
         apiclient.ApiClient('recommendations', timeout=5).delete()
         mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
+
+    @mock.patch('requests.Session.get', side_effect=mock_200_response)
+    def test_timeouts_disabled_by_settings(self, mock_get):
+        self.simulate_put('/settings', body='{"timeouts": false}')
+        apiclient.ApiClient('recommendations').get()
+        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=0)

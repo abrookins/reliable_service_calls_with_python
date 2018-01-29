@@ -11,9 +11,13 @@ from requests.exceptions import ConnectionError, Timeout
 
 from .jittery_retry import RetryWithFullJitter
 from .signals import publish_metric
+from .util import redis_client, from_redis_hash
 
+
+SETTINGS_KEY = 'settings'
 
 log = logging.getLogger(__name__)
+redis = redis_client()
 
 
 urls = {
@@ -46,6 +50,23 @@ class ApiClient(requests.Session):
             self.mount(self.url, adapter)
 
     def _request(self, method, *args, **kwargs):
+        settings = from_redis_hash(redis.hgetall(SETTINGS_KEY))
+        use_timeouts = settings.get('timeouts')
+        use_circuit_breakers = settings.get('circuit_breakers')
+
+        if use_timeouts:
+            kwargs['timeout'] = kwargs.get('timeout') or self.timeout
+        else:
+            kwargs['timeout'] = 0
+
+        if use_circuit_breakers:
+            result = self._request_with_circuit_breaker(method, *args, **kwargs)
+        else:
+            result = method(*args, **kwargs)
+
+        return result
+
+    def _request_with_circuit_breaker(self, method, *args, **kwargs):
         result = None
 
         try:
@@ -66,16 +87,10 @@ class ApiClient(requests.Session):
         return result
 
     def get(self, **kwargs):
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.timeout
         return self._request(super().get, self.url, **kwargs)
 
     def post(self, data=None, json=None, **kwargs):
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.timeout
         return self._request(super().post, self.url, data, json, **kwargs)
 
     def delete(self, **kwargs):
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.timeout
         return self._request(super().delete, self.url, **kwargs)
