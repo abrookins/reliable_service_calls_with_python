@@ -12,7 +12,7 @@ authentication:
   build: .
   ports:
     - "8000:8000"
-  command: /usr/local/bin/gunicorn simulation.auth:api --reload --log-level debug -w 8 -b :8000
+  command: /usr/local/bin/gunicorn simulation.authentication:api --reload --log-level debug -w 8 -b :8000
   links:
     - redis
   volumes:

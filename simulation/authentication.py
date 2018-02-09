@@ -36,7 +36,7 @@ class AuthenticationResource:
 
         if token is None:
             publish_metric.send('authentication.missing_auth_token')
-            description = 'Please provide an auth token as part of the request.'
+            description = 'Please provide an authentication token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',
                                           description,
