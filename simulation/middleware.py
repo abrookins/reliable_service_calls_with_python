@@ -76,7 +76,6 @@ class PermissionsMiddleware:
 
         publish_metric.send('authorization.authorization_success')
 
-
         req.context['auth_header'] = auth_headers
         req.context['user_details'] = user_details
 

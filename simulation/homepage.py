@@ -9,7 +9,6 @@ from .middleware import PermissionsMiddleware
 from .signals import publish_metric
 from .settings_helpers import get_client_settings
 
-
 settings = get_client_settings()
 recommended = ApiClient('recommendations', settings)
 popular = ApiClient('popular', settings)
@@ -36,6 +35,7 @@ class HomepageResource:
 
     Note that the request must include an authentication token.
     """
+
     def on_get(self, req, resp):
         """Return data for the homepage."""
         auth_header = req.context.get('auth_header')
@@ -50,7 +50,6 @@ class HomepageResource:
         })
 
         publish_metric.send('homepage.get')
-
 
 
 api = falcon.API(middleware=[

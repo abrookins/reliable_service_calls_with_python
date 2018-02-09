@@ -15,6 +15,7 @@ authentication:
   command: /usr/local/bin/gunicorn simulation.authentication:api --reload --log-level debug -w 8 -b :8000
   links:
     - redis
+    - settings
   volumes:
     - .:/code
 
@@ -30,6 +31,7 @@ home:
     - popular
     - redis
     - metrics
+    - settings
   volumes:
     - .:/code
 
@@ -42,6 +44,7 @@ recommendations:
   links:
     - authentication
     - metrics
+    - settings
     - redis
   volumes:
     - .:/code
@@ -55,6 +58,7 @@ popular:
   links:
     - authentication
     - redis
+    - settings
     - metrics
   volumes:
     - .:/code

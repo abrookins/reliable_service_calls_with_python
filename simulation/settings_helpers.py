@@ -1,15 +1,29 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from .api_client import ApiClient
+import json
+
+from .redis_helpers import from_redis_hash, redis_client
 from .default_settings import DEFAULT_SETTINGS
 
+SETTINGS_KEY = 'settings'
+
 _client_settings = None
+redis = redis_client()
 
 
 def get_client_settings():
+    """Return the settings that ApiClient instances should use.
+
+    Defaults to falcon.default_settings.DEFAULT_SETTINGS. Any setting changed
+    via the Settings API overrides its default.
+
+    After retrieving the current settings, the value is cached for the lifetime
+    of the process. If settings change, the process needs to be restarted.
+    """
     global _client_settings
-    defaults = DEFAULT_SETTINGS.copy()
-    _client_settings = _client_settings \
-                       or ApiClient('settings', defaults).get() \
-                       or defaults
+
+    settings = DEFAULT_SETTINGS.copy()
+    settings.update(from_redis_hash(redis.hgetall(SETTINGS_KEY) or {}))
+    _client_settings = settings
+
     return _client_settings
