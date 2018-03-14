@@ -4,7 +4,7 @@ if [ "$1" = '--initialize' ]; then
     docker-machine start default
     eval $(docker-machine env default)
     docker-compose build
-    docker-compose up authentication recommendations homepage popular settings redis nginx grafana influxdb telegraf
+    docker-compose up
 fi
 
 IP=`docker-machine ip`
@@ -16,7 +16,7 @@ IP=`docker-machine ip`
 curl -X PUT -H "Authorization: Token 0x132" -H "CONTENT-TYPE: application/json" \
     -d '{
         "circuit_breakers": false,
-        "timeouts": false,
+        "timeout": 10,
         "retries": false,
         "outages": ["/recommendations"]
       }' "$IP/settings"
