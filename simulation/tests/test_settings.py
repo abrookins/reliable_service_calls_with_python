@@ -43,24 +43,24 @@ class TestSettingsResource(TestCase):
         assert resp.json == expected
         assert redis.smembers('outages') == {'recommendations'}
 
-    def test_false_field(self):
+    def test_false_value(self):
         expected_settings = DEFAULT_SETTINGS.copy()
-        expected_settings['timeouts'] = False
+        expected_settings['timeout'] = False
 
-        data = {'timeouts': False}
+        data = {'timeout': False}
         self.simulate_put('/settings', body=json.dumps(data))
-        assert redis.hmget('settings', 'timeouts') == ['False']
+        assert redis.hmget('settings', 'timeout') == ['False']
 
         resp = self.simulate_get('/settings')
         assert resp.json == expected_settings
 
-    def test_true_field(self):
+    def test_true_value(self):
         expected_settings = DEFAULT_SETTINGS.copy()
-        expected_settings['timeouts'] = True
+        expected_settings['timeout'] = True
 
-        data = {'timeouts': True}
+        data = {'timeout': True}
         self.simulate_put('/settings', body=json.dumps(data))
-        assert redis.hmget('settings', 'timeouts') == ['True']
+        assert redis.hmget('settings', 'timeout') == ['True']
 
         resp = self.simulate_get('/settings')
         assert resp.json == expected_settings

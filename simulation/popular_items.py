@@ -3,9 +3,12 @@
 import json
 
 import falcon
+import statsd
 
 from .middleware import FuzzingMiddleware
-from .signals import publish_metric
+
+
+metrics = statsd.StatsClient('telegraf')
 
 
 class PopularItemsResource:
@@ -29,7 +32,7 @@ class PopularItemsResource:
     """
     def on_get(self, req, resp):
         """Return yesterday's most popular items."""
-        publish_metric.send('popular_items.get')
+        metrics.incr('popular_items.get')
         most_popular_yesterday = [1, 2, 3, 4, 5, 6, 7, 8 , 9, 10]
         resp.body = json.dumps(most_popular_yesterday)
 

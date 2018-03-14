@@ -4,12 +4,13 @@ import json
 import logging
 
 import falcon
+import statsd
 
-from .signals import publish_metric
 from .middleware import PermissionsMiddleware, FuzzingMiddleware
 
 
 log = logging.getLogger(__name__)
+metrics = statsd.StatsClient('telegraf')
 
 
 class RecommendationsResource:
@@ -41,7 +42,7 @@ class RecommendationsResource:
 
     def on_get(self, req, resp):
         """Return recommendations for a user."""
-        publish_metric.send('recommendations.get')
+        metrics.incr('recommendations.get')
 
         user_details = req.context['user_details']
         resp.body = json.dumps(self._recommended_for_user(user_details['uuid']))

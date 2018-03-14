@@ -5,10 +5,10 @@ import time
 import sys
 
 import falcon
+import statsd
 
 from .api_client import ApiClient
 from .settings import OUTAGES_KEY
-from .signals import publish_metric
 from .redis_helpers import redis_client
 from .settings_helpers import get_client_settings
 
@@ -17,6 +17,7 @@ redis = redis_client()
 settings = get_client_settings()
 auth_client = ApiClient('authentication', settings)
 log = logging.getLogger(__name__)
+metrics = statsd.StatsClient('telegraf')
 
 
 class FuzzingMiddleware:
@@ -67,14 +68,14 @@ class PermissionsMiddleware:
         user_details = auth_response.json()
 
         if not self._has_permission(user_details):
-            publish_metric.send('authorization.permission_denied')
+            metrics.incr('authorization.permission_denied')
             description = 'You do not have permission to access this resource.'
 
             raise falcon.HTTPForbidden('Permission denied',
                                        description,
                                        href='http://docs.example.com/auth')
 
-        publish_metric.send('authorization.authorization_success')
+        metrics.incr('authorization.authorization_success')
 
         req.context['auth_header'] = auth_headers
         req.context['user_details'] = user_details

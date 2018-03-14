@@ -8,6 +8,7 @@ from simulation.default_settings import DEFAULT_SETTINGS
 from simulation.jittery_retry import RetryWithFullJitter
 from simulation.settings import SettingsResource
 from simulation.redis_helpers import redis_client
+from simulation.settings_helpers import get_client_settings
 from . import (
     mock_200_response,
     mock_connection_error,
@@ -79,21 +80,21 @@ class TestApiClient(TestCase):
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
     def test_get_uses_default_timeout(self, mock_get):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
+        settings.update(timeout=None)
         api_client.ApiClient('recommendations', settings).get()
         mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=1)
 
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
     def test_get_uses_provided_timeout(self, mock_get):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
-        api_client.ApiClient('recommendations', settings, timeout=5).get()
+        settings.update(timeout=5)
+        api_client.ApiClient('recommendations', settings).get()
         mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
 
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_default_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
+        settings.update(timeout=None)
         api_client.ApiClient('recommendations', settings).post()
         mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None,
                                      timeout=1)
@@ -101,27 +102,28 @@ class TestApiClient(TestCase):
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_provided_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
-        api_client.ApiClient('recommendations', settings, timeout=5).post()
+        settings.update(timeout=5)
+        api_client.ApiClient('recommendations', settings).post()
         mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None,
                                      timeout=5)
 
     @mock.patch('requests.Session.delete', side_effect=mock_200_response)
     def test_delete_uses_default_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
+        settings.update(timeout=None)
         api_client.ApiClient('recommendations', settings).delete()
         mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=1)
 
     @mock.patch('requests.Session.delete', side_effect=mock_200_response)
     def test_delete_uses_provided_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
-        settings.update(timeouts=True)
-        api_client.ApiClient('recommendations', settings, timeout=5).delete()
+        settings.update(timeout=5)
+        api_client.ApiClient('recommendations', settings).delete()
         mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
 
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
-    def test_timeouts_disabled_by_settings(self, mock_get):
-        self.simulate_put('/settings', body='{"timeouts": false}')
-        api_client.ApiClient('recommendations').get()
-        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=0)
+    def test_timeouts_changed_by_settings(self, mock_get):
+        self.simulate_put('/settings', body='{"timeout": 10}')
+        settings = get_client_settings()
+        api_client.ApiClient('recommendations', settings).get()
+        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=10)

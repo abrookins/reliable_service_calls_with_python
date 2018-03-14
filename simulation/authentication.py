@@ -3,8 +3,10 @@
 import json
 import uuid
 import falcon
+import statsd
 
-from .signals import publish_metric
+
+metrics = statsd.StatsClient('telegraf')
 
 
 class AuthenticationResource:
@@ -35,7 +37,7 @@ class AuthenticationResource:
         challenges = ['Token type="pudding"']
 
         if token is None:
-            publish_metric.send('authentication.missing_auth_token')
+            metrics.incr('authentication.missing_auth_token')
             description = 'Please provide an authentication token as part of the request.'
 
             raise falcon.HTTPUnauthorized('Auth token required',

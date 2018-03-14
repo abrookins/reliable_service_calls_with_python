@@ -3,24 +3,22 @@
 import logging
 import pybreaker
 import requests
+import statsd
 
 from requests.adapters import HTTPAdapter
 from requests.exceptions import ConnectionError, Timeout
 
 from .default_settings import DEFAULT_SETTINGS
 from .jittery_retry import RetryWithFullJitter
-from .signals import publish_metric
-from .redis_helpers import redis_client
 
 log = logging.getLogger(__name__)
-redis = redis_client()
+metrics = statsd.StatsClient('telegraf')
 
 urls = {
     'authentication': 'http://authentication:8000/authenticate',
     'recommendations': 'http://recommendations:8002/recommendations',
     'popular': 'http://popular:8003/popular_items',
     'settings': 'http://settings:8004/settings',
-    'metrics': 'http://metrics:8005/metrics',
 }
 
 circuit_breakers = {
@@ -28,7 +26,6 @@ circuit_breakers = {
     'recommendations': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
     'popular': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
     'settings': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30),
-    'metrics': pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
 }
 
 
@@ -46,14 +43,13 @@ class ApiClient(requests.Session):
                 adapter = HTTPAdapter(max_retries=RetryWithFullJitter(total=max_retries))
                 self.mount(self.url, adapter)
 
-    def _request(self, method, *args, **kwargs):
-        use_timeouts = self.settings['timeouts']
-        use_circuit_breakers = self.settings['circuit_breakers']
+        if self.settings['timeout']:
+            self.settings['timeout'] = int(self.settings['timeout'])
 
-        if use_timeouts:
-            kwargs['timeout'] = kwargs.get('timeout') or self.timeout
-        else:
-            kwargs['timeout'] = 0
+    def _request(self, method, *args, **kwargs):
+        timeout_from_settings = self.settings['timeout']
+        use_circuit_breakers = self.settings['circuit_breakers']
+        kwargs['timeout'] = self.settings['timeout'] or kwargs.get('timeout') or self.timeout
 
         if use_circuit_breakers:
             result = self._request_with_circuit_breaker(method, *args, **kwargs)
@@ -69,16 +65,16 @@ class ApiClient(requests.Session):
             result = self.circuit_breaker.call(method, *args, **kwargs)
         except ConnectionError:
             log.error('Connection error connecting to %s', self.url)
-            publish_metric.send('circuitbreaker.{}.connection_error'.format(self.service))
+            metrics.incr('circuitbreaker.{}.connection_error'.format(self.service))
         except Timeout:
             log.error('Timeout connecting to %s', self.url)
-            publish_metric.send('circuitbreaker.{}.timeout'.format(self.service))
+            metrics.incr('circuitbreaker.{}.timeout'.format(self.service))
         except pybreaker.CircuitBreakerError as e:
             log.error('Circuit breaker error: %s', e)
-            publish_metric.send('circuitbreaker.{}.breaker_open'.format(self.service))
+            metrics.incr('circuitbreaker.{}.breaker_open'.format(self.service))
         except Exception:
             log.exception('Unexpected error connecting to: %s', self.url)
-            publish_metric.send('circuitbreaker.{}.error'.format(self.service))
+            metrics.incr('circuitbreaker.{}.error'.format(self.service))
 
         return result
 

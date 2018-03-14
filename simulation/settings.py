@@ -15,7 +15,7 @@ OUTAGES_KEY = 'outages'
 VALID_SETTINGS = {
     OUTAGES_KEY,
     'circuit_breakers',
-    'timeouts',
+    'timeout',
     'retries'
 }
 

@@ -3,15 +3,16 @@
 import json
 
 import falcon
+import statsd
 
 from .api_client import ApiClient
 from .middleware import PermissionsMiddleware
-from .signals import publish_metric
 from .settings_helpers import get_client_settings
 
 settings = get_client_settings()
 recommended = ApiClient('recommendations', settings)
 popular = ApiClient('popular', settings)
+metrics = statsd.StatsClient('telegraf')
 
 
 class HomepageResource:
@@ -49,7 +50,7 @@ class HomepageResource:
             'popular_items': popular_items
         })
 
-        publish_metric.send('homepage.get')
+        metrics.incr('homepage.get')
 
 
 api = falcon.API(middleware=[

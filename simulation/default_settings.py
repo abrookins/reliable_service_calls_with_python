@@ -3,7 +3,7 @@
 
 DEFAULT_SETTINGS = {
     'circuit_breakers': True,
-    'timeouts': False,
+    'timeout': None,
     'retries': False,
     'outages': []
 }

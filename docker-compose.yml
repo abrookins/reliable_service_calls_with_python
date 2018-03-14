@@ -3,6 +3,7 @@ tests:
   build: .
   links:
     - test-redis:redis
+    - telegraf
   volumes:
     - .:/code
   command: ["py.test", "--ignore=env"]
@@ -16,6 +17,7 @@ authentication:
   links:
     - redis
     - settings
+    - telegraf
   volumes:
     - .:/code
 
@@ -30,8 +32,8 @@ home:
     - recommendations
     - popular
     - redis
-    - metrics
     - settings
+    - telegraf
   volumes:
     - .:/code
 
@@ -43,9 +45,9 @@ recommendations:
   command: /usr/local/bin/gunicorn simulation.recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
   links:
     - authentication
-    - metrics
     - settings
     - redis
+    - telegraf
   volumes:
     - .:/code
 
@@ -59,7 +61,7 @@ popular:
     - authentication
     - redis
     - settings
-    - metrics
+    - telegraf
   volumes:
     - .:/code
 
@@ -71,20 +73,40 @@ settings:
   command: /usr/local/bin/gunicorn simulation.settings:api --reload --log-level debug -w 8 -b :8004
   links:
     - redis
-    - metrics
   volumes:
     - .:/code
 
-metrics:
-  restart: "no"
-  build: .
+influxdb:
+  image: influxdb:latest
+  container_name: influxdb
   ports:
-    - "8005:8005"
-  command: /usr/local/bin/gunicorn simulation.metrics:api --reload --log-level debug -w 8 -b :8005
-  links:
-    - redis
+    - "8083:8083"
+    - "8086:8086"
+    - "8090:8090"
+  env_file:
+    - 'env.influxdb'
   volumes:
-    - .:/code
+    # Data persistency
+    # sudo mkdir -p /srv/docker/influxdb/data
+    - /srv/docker/influxdb/data:/var/lib/influxdb
+
+telegraf:
+  image: telegraf:latest
+  container_name: telegraf
+  links:
+    - influxdb
+  volumes:
+    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+
+grafana:
+  image: grafana/grafana:latest
+  container_name: grafana
+  ports:
+    - "3000:3000"
+  env_file:
+    - 'env.grafana'
+  links:
+    - influxdb
 
 nginx:
   restart: "no"
@@ -94,7 +116,6 @@ nginx:
   links:
     - home
     - settings
-    - metrics
   volumes:
     - ./nginx/conf.d:/etc/nginx/conf.d
 

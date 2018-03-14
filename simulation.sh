@@ -4,7 +4,7 @@ if [ "$1" = '--initialize' ]; then
     docker-machine start default
     eval $(docker-machine env default)
     docker-compose build
-    docker-compose up authentication recommendations homepage popular settings metrics redis nginx
+    docker-compose up authentication recommendations homepage popular settings redis nginx grafana influxdb telegraf
 fi
 
 IP=`docker-machine ip`
