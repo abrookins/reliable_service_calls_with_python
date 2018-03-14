@@ -45,22 +45,22 @@ class TestSettingsResource(TestCase):
 
     def test_false_value(self):
         expected_settings = DEFAULT_SETTINGS.copy()
-        expected_settings['timeout'] = False
+        expected_settings['retries'] = False
 
-        data = {'timeout': False}
+        data = {'retries': False}
         self.simulate_put('/settings', body=json.dumps(data))
-        assert redis.hmget('settings', 'timeout') == ['False']
+        assert redis.hmget('settings', 'retries') == ['False']
 
         resp = self.simulate_get('/settings')
         assert resp.json == expected_settings
 
     def test_true_value(self):
         expected_settings = DEFAULT_SETTINGS.copy()
-        expected_settings['timeout'] = True
+        expected_settings['retries'] = True
 
-        data = {'timeout': True}
+        data = {'retries': True}
         self.simulate_put('/settings', body=json.dumps(data))
-        assert redis.hmget('settings', 'timeout') == ['True']
+        assert redis.hmget('settings', 'retries') == ['True']
 
         resp = self.simulate_get('/settings')
         assert resp.json == expected_settings
