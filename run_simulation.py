@@ -25,6 +25,7 @@ def simulation_one():
 
     print(resp.json())
 
+    # run('wrk ', shell=True, stdout=PIPE).stdout.strip().decode()
 
 if __name__ == '__main__':
     simulation_one()
