@@ -6,10 +6,10 @@ import logging
 import falcon
 
 from .redis_helpers import redis_client, from_redis_hash
+
+
 SETTINGS_KEY = 'settings'
-
 OUTAGES_KEY = 'outages'
-
 PERFORMANCE_PROBLEMS_KEY = 'performance_problems'
 
 VALID_SETTINGS = {
