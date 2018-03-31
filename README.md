@@ -65,8 +65,12 @@ As you can see, we get two lists, `recommendations` and `popular_items`.
 The demo system runs as a set of Docker containers defined in the
 `docker-compose.yml` file.
 
-You will need Docker installed to run the system. After installing Docker,
-build the images and start the services with the following commands:
+You will need Docker installed to run the system. I'm using Docker Toolbox
+with Docker version 1.12.5, build 7392c3b, which is probably hecka hold.
+
+After installing Docker Toolbox or Docker for Mac, presuming it still
+supports this code, build the images and start the services with the
+following commands:
 
     $ docker-compose up
 
