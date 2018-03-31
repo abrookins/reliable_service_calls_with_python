@@ -14,6 +14,7 @@ PERFORMANCE_PROBLEMS_KEY = 'performance_problems'
 
 VALID_SETTINGS = {
     OUTAGES_KEY,
+    PERFORMANCE_PROBLEMS_KEY,
     'circuit_breakers',
     'timeout',
     'retries'
@@ -64,9 +65,13 @@ class SettingsResource:
         """Return the current simulation settings."""
         settings = from_redis_hash(redis.hgetall(SETTINGS_KEY) or {})
         outages = list(redis.smembers(OUTAGES_KEY) or [])
+        perf_problems = list(redis.smembers(PERFORMANCE_PROBLEMS_KEY) or [])
 
         if outages:
-            settings['outages'] = outages
+            settings[OUTAGES_KEY] = outages
+
+        if perf_problems:
+            settings[PERFORMANCE_PROBLEMS_KEY] = perf_problems
 
         resp.body = json.dumps(settings)
 
@@ -79,13 +84,22 @@ class SettingsResource:
             for path in settings[OUTAGES_KEY]:
                 redis.sadd(OUTAGES_KEY, path)
 
+        if PERFORMANCE_PROBLEMS_KEY in settings:
+            redis.delete(PERFORMANCE_PROBLEMS_KEY)
+            for path in settings[PERFORMANCE_PROBLEMS_KEY]:
+                redis.sadd(PERFORMANCE_PROBLEMS_KEY, path)
+
         new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
 
         if new_settings:
             redis.hmset(SETTINGS_KEY, new_settings)
 
         if OUTAGES_KEY in settings:
-            new_settings['outages'] = list(redis.smembers(OUTAGES_KEY) or [])
+            new_settings[OUTAGES_KEY] = list(redis.smembers(OUTAGES_KEY) or [])
+
+        if PERFORMANCE_PROBLEMS_KEY in settings:
+            new_settings[PERFORMANCE_PROBLEMS_KEY] = list(
+                redis.smembers(PERFORMANCE_PROBLEMS_KEY) or [])
 
         resp.body = json.dumps(new_settings)
 
@@ -98,6 +112,11 @@ class SettingsResource:
             for path in settings[OUTAGES_KEY]:
                 redis.sadd(OUTAGES_KEY, path)
 
+        if PERFORMANCE_PROBLEMS_KEY in settings:
+            redis.delete(PERFORMANCE_PROBLEMS_KEY)
+            for path in settings[PERFORMANCE_PROBLEMS_KEY]:
+                redis.sadd(PERFORMANCE_PROBLEMS_KEY, path)
+
         current_settings = from_redis_hash(redis.hgetall(SETTINGS_KEY) or {})
         new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
 
@@ -106,7 +125,11 @@ class SettingsResource:
             redis.hmset(SETTINGS_KEY, current_settings)
 
         if OUTAGES_KEY in settings:
-            current_settings['outages'] = list(redis.smembers(OUTAGES_KEY) or [])
+            current_settings[OUTAGES_KEY] = list(redis.smembers(OUTAGES_KEY) or [])
+
+        if PERFORMANCE_PROBLEMS_KEY in settings:
+            current_settings[PERFORMANCE_PROBLEMS_KEY] = list(
+                redis.smembers(PERFORMANCE_PROBLEMS_KEY) or [])
 
         resp.body = json.dumps(current_settings)
 

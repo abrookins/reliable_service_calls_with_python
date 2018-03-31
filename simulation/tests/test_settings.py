@@ -23,6 +23,11 @@ class TestPutSettingsResource(TestCase):
         resp = self.simulate_put('/settings', body='boo')
         assert resp.status_code == 400
 
+    def test_sending_invalid_setting(self):
+        data = {'super_fake': True}
+        resp = self.simulate_put('/settings', body=json.dumps(data))
+        assert resp.status_code == 400
+
     def test_adds_outages(self):
         data = {'outages': ['recommendations']}
         resp = self.simulate_put('/settings', body=json.dumps(data))
@@ -34,6 +39,18 @@ class TestPutSettingsResource(TestCase):
         resp = self.simulate_put('/settings', body=json.dumps(data))
         assert resp.json == data
         assert redis.smembers('outages') == set()
+
+    def test_adds_performance_problems(self):
+        data = {'performance_problems': ['recommendations']}
+        resp = self.simulate_put('/settings', body=json.dumps(data))
+        assert resp.json == data
+        assert redis.smembers('performance_problems') == {'recommendations'}
+
+    def test_clears_performance_problems(self):
+        data = {'performance_problems': []}
+        resp = self.simulate_put('/settings', body=json.dumps(data))
+        assert resp.json == data
+        assert redis.smembers('performance_problems') == set()
 
     def test_replaces_existing_settings(self):
         self.simulate_patch('/settings', body=json.dumps({
@@ -82,6 +99,11 @@ class TestPatchSettingsResource(TestCase):
         resp = self.simulate_patch('/settings', body='boo')
         assert resp.status_code == 400
 
+    def test_sending_invalid_setting(self):
+        data = {'super_fake': True}
+        resp = self.simulate_patch('/settings', body=json.dumps(data))
+        assert resp.status_code == 400
+
     def test_adds_outages(self):
         data = {'outages': ['recommendations']}
         resp = self.simulate_patch('/settings', body=json.dumps(data))
@@ -93,6 +115,18 @@ class TestPatchSettingsResource(TestCase):
         resp = self.simulate_patch('/settings', body=json.dumps(data))
         assert resp.json == data
         assert redis.smembers('outages') == set()
+
+    def test_adds_performance_problems(self):
+        data = {'performance_problems': ['recommendations']}
+        resp = self.simulate_patch('/settings', body=json.dumps(data))
+        assert resp.json == data
+        assert redis.smembers('performance_problems') == {'recommendations'}
+
+    def test_clears_performance_problems(self):
+        data = {'performance_problems': []}
+        resp = self.simulate_patch('/settings', body=json.dumps(data))
+        assert resp.json == data
+        assert redis.smembers('performance_problems') == set()
 
     def test_replaces_existing_settings(self):
         # Set initial settings
