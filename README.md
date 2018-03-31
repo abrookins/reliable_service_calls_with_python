@@ -1,27 +1,29 @@
-# Simulating Outages to Demonstrate Patterns for Reliable Networked Service Calls
+# Demonstrating Timeouts, Retries, Circuit Breakers, API Gateways, and Graceful Degradation with an Outage Simulator
 
-This project demonstrates stability patterns that will make network requests in
-your programs more reliable. The language used is Python, but the patterns are
-universal.
+This project is an outage simulator designed to demonstrate the effects of
+using timeouts, retries, and circuit breakers in a service-oriented system. The
+language used is Python, but the patterns are language-agnostic.
 
 The form of the demonstration is a set of backend web services against which
-various common failure modes are simulated. For example, total failure of an
-upstream web service.
+two common failure modes are simulated: socket errors when connecting to an
+upstream service (e.g., due to misconfiguration) and slow response times (e.g.,
+due to performance problems upstream).
 
 The patterns demonstrated include:
 
-* **Circuit breakers**: mechanisms that stop executing code after reaching a failure threshold
 * **Timeouts**: deadlines that network requests must meet, after which the program stops waiting
-* **Retries with backoff and jitter**: attempts to try a failed network request again
-* **Graceful degradation**: falling back to a degraded state; i.e., returning partial data
-* **Generic gateway**: a collection of code that templates error handling, especially around network requests
+* **Retries with backoff and jitter**: attempts to retry a failed network request
+* **Circuit breakers**: mechanisms that stop executing code after reaching a failure threshold
+* **API gateway**: code that templates error handling around network requests
+* **Graceful degradation**: falling back to a degraded state
 
-The _generic gateway_ and _circuit breaker_ patterns are based on Chapter 5,
-"Stability Patterns," of the book *Release It!* by Michael Nygard.
+Many of these concepts are based on Chapter 5, "Stability Patterns," of the
+book *Release It!* by Michael Nygard.
 
-The idea to use exponential backoff with "jitter" is based on [*Exponential
-Backoff And Jitter*](https://www.awsarchitectureblog.com/2015/03/backoff.html),
+The use of exponential backoff with "full jitter" when doing retries is based
+on [*Exponential Backoff And Jitter*](https://www.awsarchitectureblog.com/2015/03/backoff.html),
 published in the *AWS Architecture Blog*.
+
 
 ## Introducing the Demo System
 
@@ -30,19 +32,19 @@ this project. The homepage service acts as a composition layer that returns a
 JSON response containing data needed for a client to render a user's theoretical
 homepage:
 
-* Popular items (from the popularity service)
-* Items recommended for this user (from the recommendations service)
+* Permissions from the authentication/authorization service
+* Popular items from the popularity service
+* Recommended items from the recommendations service
 
-(What these items are is intentionally unspecified.)
+(What these "items" are is left unspecified.)
 
 The service requires an authentication token that is forwarded to a system that
-returns the user's permissions, for a total of three network requests required
-to return the response (authorization, recommendations, and popular items).
+authenticates the token and returns the user's permissions.
 
-Here is an example request made of this service:
+Here is an example request:
 
 ```
-    $ curl -v -H "Authorization: Token 0x132" "http://192.168.99.100:8001/"
+    $ curl -v -H "Authorization: Token 0x132" `docker-machine ip`\n
 
     < HTTP/1.1 200 OK
     < Server: gunicorn/19.6.0
@@ -57,84 +59,90 @@ Here is an example request made of this service:
 
 As you can see, we get two lists, `recommendations` and `popular_items`.
 
-## Method of Inquiry
 
-This document will proceed through a series of simulations, starting with the
-total failure of an upstream service. These simulations will show how the
-stability patterns behave under specific failure conditions, while also
-providing chances to examine Python code examples.
- 
-With those introductions out of the way, let's start simulating!
+## Running the Demo System
 
-## Simulation 1: Total Failure of an Upstream Service, Using Retries
+The demo system runs as a set of Docker containers defined in a
+`docker-compose.yml` file.
 
-In this simulation, our homepage service is humming along, serving popularity
-and recommendations data it pulled from two upstream services, when suddenly,
-the upstream recommendations service stops responding.
+You will need Docker installed to run the system. After installing Docker,
+build the images and start the services with the following commands:
 
-Let's look at some graphs of data generated during the outage:
+    $ docker-compose build
+    $ docker-compose up
 
-![Graph showing the recommendations service outage](images/outage_simulation.png)
+After all the containers are running, you should be able to make a request of
+the homepage service:
 
-The graph shows a timeline of events related to the outage:
+    $ curl -v -H "Authorization: Token 0x132" `docker-machine ip`\n
 
-1. The homepage service is handling steady traffic
-2. An outage begins: the recommendations service stops working; homepage service availability plummets
-3. Circuit breakers around the recommendations service open
-    * Homepage service availability jumps back up, handling more traffic than before the outage
-    * Recommendations circuit breakers report connection errors
-4. The recommendations service comes back online; gradually the homepage service begins using it
-8. All of the recommendations circuit breakers close, and normal operation resumes
+If that doesn't work, try checking `docker-compose logs home` to see the
+service's logs.
 
-*Very interesting, but I have questions*, you might be thinking! Here are a few
-worth pondering:
-
-### Does This Graph Show a Reliable System?
-
-I would say yes. Aside from the fact that an outage occurred, the graph is
-pretty good. While the recommendations outage was going on, the homepage
-service maintained decent availability.
-
-Without timeouts or circuit breakers, the homepage service would have been
-unavailable until the outage was over. But that's not what happened --
-homepage stayed up.
-
-There was just one problem: at the start of the outage, homepage service
-availability dropped. It recovered, but we can probably do better.
-
-### Why did homepage availability drop at the start of the outage, and what can we do about that?
-
-The short drop in homepage service availability reflects the system trying, and
-failing, to handle connection errors to the upstream recommendations service.
-
-In this simulation, the homepage service's connection to the recommendations
-service used the `ApiClient` class configured to retry with random jitter (and
-to use a circuit breaker).
-
-Retries and timeouts couldn't help here -- the recommendations service failed
-100% of the time during the outage. We can do better by not using retries for
-our requests to the recommendations service.
-
-### What caused the circuit breakers to open?
-
-Circuit breakers saved the homepage service: when they opened, the service
-stopped trying to get recommendations and instead degraded to providing
-popular items only.
-
-But what caused the circuit breakers to open?
-
-The circuit breaker around homepage requests to the recommendations service kept
-track of any errors that occurred during requests. When the outage began, requests
-began generating connection errors. After the circuit breaker on each worker saw
-five of these, the circuit breaker opened.
-
-### Why, after the circuit breakers opened, did homepage availability get better than before the outage started?
-### If the circuit breakers were open, why did we see connection errors during the outage?
+You can see your Docker machine's IP address with the command `docker-machine
+ip`. 
 
 
-## Simulating total failure of an upstream service without graceful degradation (authentication)
+## Python Dependencies
 
-## Simulating dependent service non-total failure (performance problems)
+You can install the Python dependencies for the project outside of Docker
+containers by running `pip install -r requirements.txt`. The supported version
+of Python is 3.6.4.
 
-## Simulating too many retries
+
+## Metrics and Graphs
+
+Telegraf is configured to receive stats from the services sent via a `statsd`
+library and send them to InfluxDB.
+
+A Grafana instance should be running at `<your Docker machine's IP>:3000`,
+e.g. http://192.168.99.100:3000.
+
+You can see metrics in InfluxDB by logging into the Grafana instance and
+creating a new dashboard. The default username and password for the Grafana
+instance are are both 'admin'.
+
+When you first login, you will need to configure an InfluxDB data source.
+You can do so from the 'Home' screen, or from Configuration (the gear) -> 
+Data Sources.
+
+On the Data Sources / New page, choose 'InfluxDB' as the type.
+The InfluxDB URL is `<your Docker machine's IP>:8086`, e.g. http://192.168.99.100:8086.
+The access type is 'direct', no authentication is needed (leave Basic Auth
+and With Credentials unchecked). Set the "Database" field under InfluxDB Details
+to "telegraf" and leave the "User" and "Password" fields blank.
+
+That should work -- test it with the "Save & Test" button.
+
+
+## Running the Simulation
+
+There is an included Python script that will set up the conditions for an
+outage simulation and then run it. The script requires that `wrk` is installed
+on your computer. On macOS, this is available via Homebrew, e.g. `brew install
+wrk`.
+
+The script takes various options that will control the type of simulation run.
+E.g., to simulate an outage during which requests to an upstream service will
+result in socket errors, run:
+
+    python run_simulation.py outage --duration 30
+
+To simulate a performance issue in an upstream service, run:
+
+    python run_simulation.py performance --duration 30
+
+To simulate the same outage, but with one-second timeouts, run:
+
+    python run_simulation.py performance --duration 30 --timeout 1
+
+To do the same, but with one-second timeouts _and_ circuit breakers, run:
+
+    python run_simulation.py performance --duration 30 --timeout 1 --circuit-breakers
+
+To see the mess that retries can cause, run:
+
+    python run_simulation.py performance --duration 30 --timeout 3 --retries
+
+You can see all the script's options by running `python run_simulation.py --help`.
 

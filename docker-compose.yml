@@ -1,132 +1,135 @@
-tests:
-  restart: "no"
-  build: .
-  links:
-    - test-redis:redis
-    - telegraf
-  volumes:
-    - .:/code
-  command: ["py.test", "--ignore=env"]
+version: "2"
 
-authentication:
-  restart: "no"
-  build: .
-  ports:
-    - "8000:8000"
-  command: /usr/local/bin/gunicorn simulation.authentication:api --reload --log-level debug -w 8 -b :8000
-  links:
-    - redis
-    - settings
-    - telegraf
-  volumes:
-    - .:/code
+services:
+  tests:
+    restart: "no"
+    build: .
+    links:
+      - test-redis:redis
+      - telegraf
+    volumes:
+      - .:/code
+    command: ["py.test", "--ignore=env"]
 
-home:
-  restart: "no"
-  build: .
-  ports:
-    - "8001:8001"
-  command: /usr/local/bin/gunicorn simulation.homepage:api --reload --log-level debug -w 8 -b :8001
-  links:
-    - authentication
-    - recommendations
-    - popular
-    - redis
-    - settings
-    - telegraf
-  volumes:
-    - .:/code
+  authentication:
+    restart: "no"
+    build: .
+    ports:
+      - "8000:8000"
+    command: /usr/local/bin/gunicorn simulation.authentication:api --reload --log-level debug -w 8 -b :8000
+    links:
+      - redis
+      - settings
+      - telegraf
+    volumes:
+      - .:/code
 
-recommendations:
-  restart: "no"
-  build: .
-  ports:
-    - "8002:8002"
-  command: /usr/local/bin/gunicorn simulation.recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
-  links:
-    - authentication
-    - settings
-    - redis
-    - telegraf
-  volumes:
-    - .:/code
+  home:
+    restart: "no"
+    build: .
+    ports:
+      - "8001:8001"
+    command: /usr/local/bin/gunicorn simulation.homepage:api --reload --log-level debug -w 8 -b :8001
+    links:
+      - authentication
+      - recommendations
+      - popular
+      - redis
+      - settings
+      - telegraf
+    volumes:
+      - .:/code
 
-popular:
-  restart: "no"
-  build: .
-  ports:
-    - "8003:8003"
-  command: /usr/local/bin/gunicorn simulation.popular_items:api --reload --log-level debug -w 8 -b :8003
-  links:
-    - authentication
-    - redis
-    - settings
-    - telegraf
-  volumes:
-    - .:/code
+  recommendations:
+    restart: "no"
+    build: .
+    ports:
+      - "8002:8002"
+    command: /usr/local/bin/gunicorn simulation.recommendations:api --reload --log-level debug --capture-output -w 8 -b :8002
+    links:
+      - authentication
+      - settings
+      - redis
+      - telegraf
+    volumes:
+      - .:/code
 
-settings:
-  restart: "no"
-  build: .
-  ports:
-    - "8004:8004"
-  command: /usr/local/bin/gunicorn simulation.settings:api --reload --log-level debug -w 8 -b :8004
-  links:
-    - redis
-  volumes:
-    - .:/code
+  popular:
+    restart: "no"
+    build: .
+    ports:
+      - "8003:8003"
+    command: /usr/local/bin/gunicorn simulation.popular_items:api --reload --log-level debug -w 8 -b :8003
+    links:
+      - authentication
+      - redis
+      - settings
+      - telegraf
+    volumes:
+      - .:/code
 
-influxdb:
-  image: influxdb:latest
-  container_name: influxdb
-  ports:
-    - "8083:8083"
-    - "8086:8086"
-    - "8090:8090"
-  env_file:
-    - 'env.influxdb'
-  volumes:
-    # Data persistency
-    # sudo mkdir -p /srv/docker/influxdb/data
-    - /srv/docker/influxdb/data:/var/lib/influxdb
+  settings:
+    restart: "no"
+    build: .
+    ports:
+      - "8004:8004"
+    command: /usr/local/bin/gunicorn simulation.settings:api --reload --log-level debug -w 8 -b :8004
+    links:
+      - redis
+    volumes:
+      - .:/code
 
-telegraf:
-  image: telegraf:latest
-  container_name: telegraf
-  links:
-    - influxdb
-  volumes:
-    - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
+  influxdb:
+    image: influxdb:latest
+    container_name: influxdb
+    ports:
+      - "8083:8083"
+      - "8086:8086"
+      - "8090:8090"
+    env_file:
+      - 'env.influxdb'
+    volumes:
+      # Data persistency
+      # sudo mkdir -p /srv/docker/influxdb/data
+      - /srv/docker/influxdb/data:/var/lib/influxdb
 
-grafana:
-  image: grafana/grafana:latest
-  container_name: grafana
-  ports:
-    - "3000:3000"
-  env_file:
-    - 'env.grafana'
-  links:
-    - influxdb
+  telegraf:
+    image: telegraf:latest
+    container_name: telegraf
+    links:
+      - influxdb
+    volumes:
+      - ./telegraf.conf:/etc/telegraf/telegraf.conf:ro
 
-nginx:
-  restart: "no"
-  build: ./nginx/
-  ports:
-    - "80:80"
-  links:
-    - home
-    - settings
-  volumes:
-    - ./nginx/conf.d:/etc/nginx/conf.d
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    env_file:
+      - 'env.grafana'
+    links:
+      - influxdb
 
-redis:
-  restart: "no"
-  image: redis
-  ports:
-    - "6379"
+  nginx:
+    restart: "no"
+    build: ./nginx/
+    ports:
+      - "80:80"
+    links:
+      - home
+      - settings
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
 
-test-redis:
-  restart: "no"
-  image: redis
-  ports:
-    - "6378:6379"
+  redis:
+    restart: "no"
+    image: redis
+    ports:
+      - "6379"
+
+  test-redis:
+    restart: "no"
+    image: redis
+    ports:
+      - "6378:6379"

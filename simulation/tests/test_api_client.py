@@ -1,6 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
 from unittest import mock
+
+import pybreaker
+
 from falcon.testing import TestCase
 
 from simulation import api_client
@@ -19,10 +22,15 @@ from . import (
 redis = redis_client()
 
 
+class FakeApiClient(api_client.ApiClient):
+    url = "http://example.com"
+    circuit_breaker = pybreaker.CircuitBreaker(fail_max=5, reset_timeout=30)
+
+
 class TestApiClient(TestCase):
     def setUp(self):
         super().setUp()
-        self.client = api_client.ApiClient('recommendations')
+        self.client = FakeApiClient()
         self.api.add_route('/settings', SettingsResource())
         redis.flushdb()
 
@@ -32,98 +40,71 @@ class TestApiClient(TestCase):
     def test_with_max_retries(self):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(retries=True)
-        client = api_client.ApiClient('recommendations', settings, max_retries=1)
-        max_retries = client.adapters['http://recommendations:8002/recommendations'].max_retries
+        client = FakeApiClient(settings, max_retries=1)
+        max_retries = client.adapters['http://example.com'].max_retries
         expected_max_retries = 1
         assert expected_max_retries == max_retries.total
 
     def test_uses_jittery_retry(self):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(retries=True)
-        client = api_client.ApiClient('recommendations', settings, max_retries=1)
-        max_retries = client.adapters['http://recommendations:8002/recommendations'].max_retries
+        client = FakeApiClient(settings, max_retries=1)
+        max_retries = client.adapters['http://example.com'].max_retries
         assert isinstance(max_retries, RetryWithFullJitter)
 
     @mock.patch('requests.Session.get', side_effect=mock_connection_error)
-    def test_circuit_breaker_tracks_connection_error(self, mock_get):
+    def test_uses_circuit_breaker(self, mock_get):
         assert self.client.circuit_breaker.fail_counter == 0
         self.client.get()
         assert self.client.circuit_breaker.fail_counter == 1
-
-    @mock.patch('requests.Session.get', side_effect=mock_timeout)
-    def test_circuit_breaker_tracks_timeout(self, mock_get):
-        assert self.client.circuit_breaker.fail_counter == 0
-        self.client.get()
-        assert self.client.circuit_breaker.fail_counter == 1
-        self.client.circuit_breaker.close()
-
-    @mock.patch('requests.Session.get', side_effect=mock_runtime_error)
-    def test_circuit_breaker_tracks_unexpected_error(self, mock_get):
-        assert self.client.circuit_breaker.fail_counter == 0
-        self.client.get()
-        assert self.client.circuit_breaker.fail_counter == 1
-        self.client.circuit_breaker.close()
-
-    @mock.patch('requests.Session.get', side_effect=mock_timeout)
-    def test_opens_circuit_breaker_after_reaching_max_error_count(self, mock_get):
-        assert self.client.circuit_breaker.fail_counter == 0
-        assert self.client.circuit_breaker.current_state == 'closed'
-        assert self.client.circuit_breaker.fail_max == 5
-
-        for x in range(5):
-            self.client.get()
-
-        assert self.client.circuit_breaker.fail_counter == 5
-        assert self.client.circuit_breaker.current_state == 'open'
-        self.client.circuit_breaker.close()
 
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
     def test_get_uses_default_timeout(self, mock_get):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=None)
-        api_client.ApiClient('recommendations', settings).get()
-        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=1)
+        FakeApiClient(settings).get()
+        mock_get.assert_called_with('http://example.com', timeout=1)
 
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
     def test_get_uses_provided_timeout(self, mock_get):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=5)
-        api_client.ApiClient('recommendations', settings).get()
-        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
+        FakeApiClient(settings).get()
+        mock_get.assert_called_with('http://example.com', timeout=5)
 
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_default_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=None)
-        api_client.ApiClient('recommendations', settings).post()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None,
+        FakeApiClient(settings).post()
+        mock_post.assert_called_with('http://example.com', None, None,
                                      timeout=1)
 
     @mock.patch('requests.Session.post', side_effect=mock_200_response)
     def test_post_uses_provided_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=5)
-        api_client.ApiClient('recommendations', settings).post()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', None, None,
+        FakeApiClient(settings).post()
+        mock_post.assert_called_with('http://example.com', None, None,
                                      timeout=5)
 
     @mock.patch('requests.Session.delete', side_effect=mock_200_response)
     def test_delete_uses_default_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=None)
-        api_client.ApiClient('recommendations', settings).delete()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=1)
+        FakeApiClient(settings).delete()
+        mock_post.assert_called_with('http://example.com', timeout=1)
 
     @mock.patch('requests.Session.delete', side_effect=mock_200_response)
     def test_delete_uses_provided_timeout(self, mock_post):
         settings = DEFAULT_SETTINGS.copy()
         settings.update(timeout=5)
-        api_client.ApiClient('recommendations', settings).delete()
-        mock_post.assert_called_with('http://recommendations:8002/recommendations', timeout=5)
+        FakeApiClient(settings).delete()
+        mock_post.assert_called_with('http://example.com', timeout=5)
 
     @mock.patch('requests.Session.get', side_effect=mock_200_response)
     def test_timeouts_changed_by_settings(self, mock_get):
         self.simulate_put('/settings', body='{"timeout": 10}')
         settings = get_client_settings()
-        api_client.ApiClient('recommendations', settings).get()
-        mock_get.assert_called_with('http://recommendations:8002/recommendations', timeout=10)
+        FakeApiClient(settings).get()
+        mock_get.assert_called_with('http://example.com', timeout=10)

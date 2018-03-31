@@ -6,11 +6,11 @@ import logging
 import falcon
 
 from .redis_helpers import redis_client, from_redis_hash
-from .settings_helpers import DEFAULT_SETTINGS
-
 SETTINGS_KEY = 'settings'
 
 OUTAGES_KEY = 'outages'
+
+PERFORMANCE_PROBLEMS_KEY = 'performance_problems'
 
 VALID_SETTINGS = {
     OUTAGES_KEY,
@@ -44,18 +44,8 @@ class SettingsResource:
         <
         * Closing connection 0
         {"outages": ["/recommendations"]}
-
-    Note: 'outages' is the only supported setting for now.
     """
-
-    def on_get(self, req, resp):
-        """Return the current simulation settings."""
-        settings = DEFAULT_SETTINGS.copy()
-        settings.update(from_redis_hash(redis.hgetall(SETTINGS_KEY) or {}))
-        resp.body = json.dumps(settings)
-
-    def on_put(self, req, resp):
-        """Replace current simulation settings values."""
+    def _parse_settings(self, req):
         try:
             settings = json.loads(req.stream.read()) or {}
         except (TypeError, json.JSONDecodeError):
@@ -68,21 +58,57 @@ class SettingsResource:
                 'Bad request',
                 'Valid settings are: {}'.format(', '.join(VALID_SETTINGS)))
 
+        return settings
+
+    def on_get(self, req, resp):
+        """Return the current simulation settings."""
+        settings = from_redis_hash(redis.hgetall(SETTINGS_KEY) or {})
+        outages = list(redis.smembers(OUTAGES_KEY) or [])
+
+        if outages:
+            settings['outages'] = outages
+
+        resp.body = json.dumps(settings)
+
+    def on_put(self, req, resp):
+        """Replace current simulation settings."""
+        settings = self._parse_settings(req)
+
         if OUTAGES_KEY in settings:
             redis.delete(OUTAGES_KEY)
             for path in settings[OUTAGES_KEY]:
                 redis.sadd(OUTAGES_KEY, path)
-        else:
+
+        new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
+
+        if new_settings:
+            redis.hmset(SETTINGS_KEY, new_settings)
+
+        if OUTAGES_KEY in settings:
+            new_settings['outages'] = list(redis.smembers(OUTAGES_KEY) or [])
+
+        resp.body = json.dumps(new_settings)
+
+    def on_patch(self, req, resp):
+        """Partially update the current simulation settings."""
+        settings = self._parse_settings(req)
+
+        if OUTAGES_KEY in settings:
             redis.delete(OUTAGES_KEY)
+            for path in settings[OUTAGES_KEY]:
+                redis.sadd(OUTAGES_KEY, path)
 
-        settings_hash = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
+        current_settings = from_redis_hash(redis.hgetall(SETTINGS_KEY) or {})
+        new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
 
-        if settings_hash:
-            redis.hmset(SETTINGS_KEY, settings_hash)
-        else:
-            redis.delete(SETTINGS_KEY)
+        if new_settings:
+            current_settings.update(new_settings)
+            redis.hmset(SETTINGS_KEY, current_settings)
 
-        resp.body = json.dumps(settings)
+        if OUTAGES_KEY in settings:
+            current_settings['outages'] = list(redis.smembers(OUTAGES_KEY) or [])
+
+        resp.body = json.dumps(current_settings)
 
 
 api = falcon.API()

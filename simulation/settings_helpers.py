@@ -16,9 +16,6 @@ def get_client_settings():
 
     Defaults to falcon.default_settings.DEFAULT_SETTINGS. Any setting changed
     via the Settings API overrides its default.
-
-    After retrieving the current settings, the value is cached for the lifetime
-    of the process. If settings change, the process needs to be restarted.
     """
     global _client_settings
 

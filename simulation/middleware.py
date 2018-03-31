@@ -1,37 +1,37 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import logging
+import random
 import time
 import sys
 
 import falcon
 import statsd
 
-from .api_client import ApiClient
-from .settings import OUTAGES_KEY
+from .clients import AuthenticationClient
+from .settings import PERFORMANCE_PROBLEMS_KEY
 from .redis_helpers import redis_client
-from .settings_helpers import get_client_settings
 
 
 redis = redis_client()
-settings = get_client_settings()
-auth_client = ApiClient('authentication', settings)
 log = logging.getLogger(__name__)
 metrics = statsd.StatsClient('telegraf')
+auth_client = AuthenticationClient()
 
 
 class FuzzingMiddleware:
     """Middleware that simulates network latency.
 
-    If we are in a simulated outage condition, the wrapped endpoint responds
-    with a three second delay, which should exhaust the timeouts that all
-    clients use.
+    If we are in a simulated performance problem condition, the wrapped
+    endpoint responds with random delay.
     """
     def process_request(self, req, resp):
-        outage = redis.sismember(OUTAGES_KEY, req.path)
-        if outage:
+        simulate_performance_problem = req.path in redis.smembers(PERFORMANCE_PROBLEMS_KEY)
+        log.info(req.path, redis.smembers(PERFORMANCE_PROBLEMS_KEY))
+
+        if simulate_performance_problem:
             log.info('Delaying response time: %s', req.path)
-            time.sleep(5)
+            time.sleep(random.randint(5, 10))
 
 
 class PermissionsMiddleware:

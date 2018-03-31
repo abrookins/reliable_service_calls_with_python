@@ -6,9 +6,10 @@ import falcon
 from falcon.testing import TestCase, SimpleTestResource
 from requests.exceptions import Timeout
 
-from simulation import api_client
-from simulation.middleware import FuzzingMiddleware, PermissionsMiddleware
+from simulation.middleware import FuzzingMiddleware, PermissionsMiddleware, auth_client
 from simulation.redis_helpers import redis_client
+from simulation.settings import PERFORMANCE_PROBLEMS_KEY
+
 from . import MockResponse
 
 
@@ -32,7 +33,7 @@ class TestFuzzingMiddleware(TestCase):
 
     @mock.patch('time.sleep')
     def test_when_outage_value_is_true(self, mock_sleep):
-        redis.sadd('outages', '/recommendations')
+        redis.sadd(PERFORMANCE_PROBLEMS_KEY, '/recommendations')
         self.simulate_get(self.url)
         assert mock_sleep.called
 
@@ -62,7 +63,7 @@ class TestPermissionMiddleware(TestCase):
         self.api.add_route('/', SimpleTestResource())
 
     def tearDown(self):
-        api_client.circuit_breakers['authentication'].close()
+        auth_client.circuit_breaker.close()
 
     def test_requires_auth_token(self):
         resp = self.simulate_get('/')

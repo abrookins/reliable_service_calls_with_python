@@ -5,14 +5,17 @@ import json
 import falcon
 import statsd
 
-from .api_client import ApiClient
+from .clients import (
+    AuthenticationClient,
+    PopularItemsClient,
+    RecommendationsClient
+)
 from .middleware import PermissionsMiddleware
-from .settings_helpers import get_client_settings
 
-settings = get_client_settings()
-recommended = ApiClient('recommendations', settings)
-popular = ApiClient('popular', settings)
+
 metrics = statsd.StatsClient('telegraf')
+recommended = RecommendationsClient()
+popular = PopularItemsClient()
 
 
 class HomepageResource:
