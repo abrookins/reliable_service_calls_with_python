@@ -1,15 +1,16 @@
 # Demonstrating Timeouts, Retries, Circuit Breakers, API Gateways, and Graceful Degradation with an Outage Simulator
 
 This project is an outage simulator designed to demonstrate the effects of
-using timeouts, retries, and circuit breakers in a service-oriented system. The
-language used is Python, but the patterns are language-agnostic.
+timeouts, retries, circuit breakers, and other stability techniques in a
+service-oriented system. The language used is Python, but the concepts
+are language-agnostic.
 
 The form of the demonstration is a set of backend web services against which
 two common failure modes are simulated: socket errors when connecting to an
 upstream service (e.g., due to misconfiguration) and slow response times (e.g.,
 due to performance problems upstream).
 
-The patterns demonstrated include:
+The techniques demonstrated include:
 
 * **Timeouts**: deadlines that network requests must meet, after which the program stops waiting
 * **Retries with backoff and jitter**: attempts to retry a failed network request
@@ -32,7 +33,6 @@ this project. The homepage service acts as a composition layer that returns a
 JSON response containing data needed for a client to render a user's theoretical
 homepage:
 
-* Permissions from the authentication/authorization service
 * Popular items from the popularity service
 * Recommended items from the recommendations service
 
@@ -62,13 +62,12 @@ As you can see, we get two lists, `recommendations` and `popular_items`.
 
 ## Running the Demo System
 
-The demo system runs as a set of Docker containers defined in a
+The demo system runs as a set of Docker containers defined in the
 `docker-compose.yml` file.
 
 You will need Docker installed to run the system. After installing Docker,
 build the images and start the services with the following commands:
 
-    $ docker-compose build
     $ docker-compose up
 
 After all the containers are running, you should be able to make a request of
@@ -76,8 +75,8 @@ the homepage service:
 
     $ curl -v -H "Authorization: Token 0x132" `docker-machine ip`\n
 
-If that doesn't work, try checking `docker-compose logs home` to see the
-service's logs.
+If that doesn't work, try checking `docker-compose logs home` and
+`docker-compose logs nginx` to see the service's logs.
 
 You can see your Docker machine's IP address with the command `docker-machine
 ip`. 
@@ -146,3 +145,16 @@ To see the mess that retries can cause, run:
 
 You can see all the script's options by running `python run_simulation.py --help`.
 
+
+## Troubleshooting
+
+Sometimes, weird things happen with the Docker containers. These are pretty standard
+Docker steps I use with Docker Toolbox (I tried Docker for Mac and it wasn't for me):
+
+- What's my machine's IP? `docker-machine ip`
+- Is the machine even on? `docker-machine start default`
+- Make sure bash/zsh knows where to find the Docker machine `eval $(docker-machine env default)`
+- Is everything running? `docker-compose ps`
+- Powercycle it `docker compose restart`
+- Damn it all (`docker-compose stop`, `docker-compose rm`, `docker-compose up` -- remove the images and rebuild)
+- Repeat.....
