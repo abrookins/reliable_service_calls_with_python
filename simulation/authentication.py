@@ -5,8 +5,10 @@ import uuid
 import falcon
 import statsd
 
+from .metrics_helpers import metrics_client
 
-metrics = statsd.StatsClient('telegraf')
+
+metrics = metrics_client()
 
 
 class AuthenticationResource:

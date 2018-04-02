@@ -9,14 +9,15 @@ import falcon
 import statsd
 
 from .clients import AuthenticationClient
-from .settings import PERFORMANCE_PROBLEMS_KEY
+from .metrics_helpers import metrics_client
 from .redis_helpers import redis_client
+from .settings import PERFORMANCE_PROBLEMS_KEY
 
 
-redis = redis_client()
 log = logging.getLogger(__name__)
-metrics = statsd.StatsClient('telegraf')
 auth_client = AuthenticationClient()
+metrics = metrics_client()
+redis = redis_client()
 
 
 class FuzzingMiddleware:
@@ -27,7 +28,6 @@ class FuzzingMiddleware:
     """
     def process_request(self, req, resp):
         simulate_performance_problem = req.path in redis.smembers(PERFORMANCE_PROBLEMS_KEY)
-        log.info(req.path, redis.smembers(PERFORMANCE_PROBLEMS_KEY))
 
         if simulate_performance_problem:
             log.info('Delaying response time: %s', req.path)

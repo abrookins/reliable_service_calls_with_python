@@ -5,3 +5,5 @@ import sys
 
 # Configure cross-app logging settings.
 logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
+TESTING = False

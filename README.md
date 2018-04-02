@@ -72,12 +72,12 @@ After installing Docker Toolbox or Docker for Mac, presuming it still
 supports this code, build the images and start the services with the
 following commands:
 
-    $ docker-compose up
+    $ docker-compose up --build -d
 
 After all the containers are running, you should be able to make a request of
 the homepage service:
 
-    $ curl -v -H "Authorization: Token 0x132" `docker-machine ip`\n
+    $ curl -v -H "Authorization: Token 0x132" `docker-machine ip`
 
 If that doesn't work, try checking `docker-compose logs home` and
 `docker-compose logs nginx` to see the service's logs.

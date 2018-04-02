@@ -21,7 +21,6 @@ VALID_SETTINGS = {
 }
 
 log = logging.getLogger(__name__)
-
 redis = redis_client()
 
 
@@ -78,58 +77,38 @@ class SettingsResource:
     def on_put(self, req, resp):
         """Replace current simulation settings."""
         settings = self._parse_settings(req)
-
-        if OUTAGES_KEY in settings:
-            redis.delete(OUTAGES_KEY)
-            for path in settings[OUTAGES_KEY]:
-                redis.sadd(OUTAGES_KEY, path)
-
-        if PERFORMANCE_PROBLEMS_KEY in settings:
-            redis.delete(PERFORMANCE_PROBLEMS_KEY)
-            for path in settings[PERFORMANCE_PROBLEMS_KEY]:
-                redis.sadd(PERFORMANCE_PROBLEMS_KEY, path)
-
-        new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
+        new_settings = {k: v for k, v in settings.items()
+                        if k not in (OUTAGES_KEY, PERFORMANCE_PROBLEMS_KEY)}
 
         if new_settings:
             redis.hmset(SETTINGS_KEY, new_settings)
 
-        if OUTAGES_KEY in settings:
-            new_settings[OUTAGES_KEY] = list(redis.smembers(OUTAGES_KEY) or [])
-
-        if PERFORMANCE_PROBLEMS_KEY in settings:
-            new_settings[PERFORMANCE_PROBLEMS_KEY] = list(
-                redis.smembers(PERFORMANCE_PROBLEMS_KEY) or [])
+        for key in (OUTAGES_KEY, PERFORMANCE_PROBLEMS_KEY):
+            if key in settings:
+                redis.delete(key)
+                for path in settings[key]:
+                    redis.sadd(key, path)
+                new_settings[key] = list(redis.smembers(key) or [])
 
         resp.body = json.dumps(new_settings)
 
     def on_patch(self, req, resp):
         """Partially update the current simulation settings."""
         settings = self._parse_settings(req)
-
-        if OUTAGES_KEY in settings:
-            redis.delete(OUTAGES_KEY)
-            for path in settings[OUTAGES_KEY]:
-                redis.sadd(OUTAGES_KEY, path)
-
-        if PERFORMANCE_PROBLEMS_KEY in settings:
-            redis.delete(PERFORMANCE_PROBLEMS_KEY)
-            for path in settings[PERFORMANCE_PROBLEMS_KEY]:
-                redis.sadd(PERFORMANCE_PROBLEMS_KEY, path)
-
         current_settings = from_redis_hash(redis.hgetall(SETTINGS_KEY) or {})
-        new_settings = {k: v for k, v in settings.items() if k != OUTAGES_KEY}
+        new_settings = {k: v for k, v in settings.items()
+                        if k not in (OUTAGES_KEY, PERFORMANCE_PROBLEMS_KEY)}
 
         if new_settings:
             current_settings.update(new_settings)
             redis.hmset(SETTINGS_KEY, current_settings)
 
-        if OUTAGES_KEY in settings:
-            current_settings[OUTAGES_KEY] = list(redis.smembers(OUTAGES_KEY) or [])
-
-        if PERFORMANCE_PROBLEMS_KEY in settings:
-            current_settings[PERFORMANCE_PROBLEMS_KEY] = list(
-                redis.smembers(PERFORMANCE_PROBLEMS_KEY) or [])
+        for key in (OUTAGES_KEY, PERFORMANCE_PROBLEMS_KEY):
+            if key in settings:
+                redis.delete(key)
+                for path in settings[key]:
+                    redis.sadd(key, path)
+                current_settings[key] = list(redis.smembers(key) or [])
 
         resp.body = json.dumps(current_settings)
 

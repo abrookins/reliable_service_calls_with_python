@@ -5,6 +5,8 @@ import argparse
 import requests
 import time
 
+from contextlib import contextmanager
+
 from requests import ConnectionError, ConnectTimeout
 from subprocess import run, PIPE, CalledProcessError
 
@@ -38,6 +40,15 @@ parser.add_argument('--duration', default=10,
                     help='The duration in seconds of each simulation')
 
 
+def docker(cmd, failure):
+    try:
+        result = run(f'eval $(docker-machine env default) && docker-compose {cmd}', shell=True, check=True)
+    except CalledProcessError:
+        print(failure)
+        print(result)
+        exit(1)
+
+
 def setup(flags):
     settings = {
         'circuit_breakers': flags.circuit_breakers,
@@ -69,18 +80,20 @@ def run_wrk(flags):
 def simulate():
     flags = parser.parse_args()
 
+    docker('up -d', failure='Failed to start settings service. Canceling simulation.')
+    time.sleep(1)
+
     # Adjust settings for the simulation -- requires that Python services restart.
     setup(flags)
 
-    # Make sure all containers are up and Python services have restarted.
-    try:
-        run('docker-compose stop', shell=True, check=True)
-        run('docker-compose up -d', shell=True, check=True)
-    except CalledProcessError:
-        print('Failed to start services. Canceling simulation.')
-        exit(1)
+    # Stopping and starting services seems to be more reliable. Just 'restart'
+    # sometimes results in Docker errors about non-running containers.
+    RESTART_ERROR = 'Failed to restart services. Canceling simulation.'
+    docker('stop', failure=RESTART_ERROR)
+    docker('up -d', failure=RESTART_ERROR)
 
-    for _ in range(3):
+    # Wait a max of five seconds for the homepage service to become available.
+    for _ in range(5):
         try:
             response = requests.get(flags.home_url, headers=HEADERS)
         except (ConnectionError, ConnectTimeout):

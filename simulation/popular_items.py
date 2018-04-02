@@ -5,10 +5,11 @@ import json
 import falcon
 import statsd
 
+from .metrics_helpers import metrics_client
 from .middleware import FuzzingMiddleware
 
 
-metrics = statsd.StatsClient('telegraf')
+metrics = metrics_client()
 
 
 class PopularItemsResource:

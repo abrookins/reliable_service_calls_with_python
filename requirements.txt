@@ -6,9 +6,10 @@ redis==2.10.5
 requests==2.11.0
 six==1.10.0
 pytz==2017.3
-statsd==3.2.2
+python-statsd==2.1.0
 
 # Testing
 pytest==3.0.2
 ipdb==0.10.1
 pytest-cov==2.3.1
+fakeredis==0.10.1

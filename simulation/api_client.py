@@ -10,12 +10,14 @@ from requests.exceptions import ConnectionError, Timeout
 from urllib.parse import urlparse
 
 from .jittery_retry import RetryWithFullJitter
+from .metrics_helpers import metrics_client
 from .redis_helpers import redis_client
 from .settings import OUTAGES_KEY
 from .settings_helpers import get_client_settings
 
+
 log = logging.getLogger(__name__)
-metrics = statsd.StatsClient('telegraf')
+metrics = metrics_client()
 redis = redis_client()
 
 
@@ -48,7 +50,7 @@ class ApiClient(requests.Session):
                 self.mount(self.url, adapter)
 
         if self.settings['timeout']:
-            self.settings['timeout'] = int(self.settings['timeout'])
+            self.settings['timeout'] = float(self.settings['timeout'])
 
     @property
     def url(self):

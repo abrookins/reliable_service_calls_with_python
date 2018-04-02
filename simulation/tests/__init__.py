@@ -2,6 +2,11 @@
 # encoding: utf-8
 from requests import Timeout
 
+import simulation
+
+
+simulation.TESTING = True
+
 
 def mock_200_response(*args, **kwargs):
     return MockResponse([1, 2, 3], 200)

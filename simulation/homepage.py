@@ -10,10 +10,11 @@ from .clients import (
     PopularItemsClient,
     RecommendationsClient
 )
+from .metrics_helpers import metrics_client
 from .middleware import PermissionsMiddleware
 
 
-metrics = statsd.StatsClient('telegraf')
+metrics = metrics_client()
 recommended = RecommendationsClient()
 popular = PopularItemsClient()
 

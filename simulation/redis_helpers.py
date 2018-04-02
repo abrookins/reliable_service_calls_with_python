@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
 import redis
+import fakeredis
+import simulation
 
 
 def from_redis_hash(hash):
@@ -19,5 +21,7 @@ def from_redis_value(value):
 
 def redis_client():
     """Return a `redis.StrictRedis` with the correct db and port."""
-    return redis.StrictRedis(host="redis", port=6379, db=0,
-                             decode_responses=True)
+    if simulation.TESTING:
+        return fakeredis.FakeStrictRedis(decode_responses=True)
+
+    return redis.StrictRedis(host="redis", port=6379, db=0, decode_responses=True)

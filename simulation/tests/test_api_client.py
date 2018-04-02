@@ -19,8 +19,6 @@ from . import (
     mock_timeout
 )
 
-redis = redis_client()
-
 
 class FakeApiClient(api_client.ApiClient):
     url = "http://example.com"
@@ -32,7 +30,7 @@ class TestApiClient(TestCase):
         super().setUp()
         self.client = FakeApiClient()
         self.api.add_route('/settings', SettingsResource())
-        redis.flushdb()
+        redis_client().flushdb()
 
     def tearDown(self):
         self.client.circuit_breaker.close()
