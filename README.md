@@ -5,7 +5,11 @@ timeouts, retries, circuit breakers, and other stability techniques in a
 service-oriented system. The language used is Python, but the concepts
 are language-agnostic.
 
-The form of the demonstration is a set of backend web services against which
+You can read my analysis of various simulations run with this simulator,
+including embedded interactive graphs of metrics taken during the outages,
+in my blog post [Demonstrating Timeouts, Retries, and Circuit Breakers with an Outage Simulator](https://andrewbrookins.com/technology/demonstrating-stability-patterns-with-an-outage-simulator/).
+
+The project consists of a set of backend web services against which
 two common failure modes are simulated: socket errors when connecting to an
 upstream service (e.g., due to misconfiguration) and slow response times (e.g.,
 due to performance problems upstream).
@@ -24,7 +28,6 @@ book *Release It!* by Michael Nygard.
 The use of exponential backoff with "full jitter" when doing retries is based
 on [*Exponential Backoff And Jitter*](https://www.awsarchitectureblog.com/2015/03/backoff.html),
 published in the *AWS Architecture Blog*.
-
 
 ## Introducing the Demo System
 
@@ -103,7 +106,7 @@ e.g. http://192.168.99.100:3000.
 
 You can see metrics in InfluxDB by logging into the Grafana instance and
 creating a new dashboard. The default username and password for the Grafana
-instance are are both 'admin'.
+instance are both 'admin'.
 
 When you first login, you will need to configure an InfluxDB data source.
 You can do so from the 'Home' screen, or from Configuration (the gear) -> 
